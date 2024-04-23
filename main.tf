@@ -45,7 +45,14 @@ resource "aws_instance" "instance-gratuite" {
 
   vpc_security_group_ids = [aws_security_group.allow_ssh.id]
 
+
+    # Transfert du dossier /hashcat-master sur chaque instance
   provisioner "file" {
+    source      = "./hashcat-master"
+    destination = "/tmp/hashcat-master"
+  }
+
+    provisioner "file" {
     source      = var.script_path
     destination = "/tmp/script.sh"
   }
