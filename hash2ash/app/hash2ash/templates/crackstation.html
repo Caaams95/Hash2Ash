@@ -1,0 +1,102 @@
+{% extends "layout.html" %} 
+{% block content %} 
+    <h1 class="mb-5">Welcome to the {{title}} page</h1>
+    <form class="row g-3 mx-auto pb-3" method="post">
+        {{form.hidden_tag()}}
+        <div class="col-md-12">
+            {{ form.name.label(class="form-control-label") }}
+
+            {% if form.name.errors %}
+                {{ form.name(class="form-control form-control-lg is-invalid") }}
+                <div class="invalid-feedback">
+                    {% for error in form.name.errors %}
+                        <span>{{error}}</span>
+                    {% endfor %}
+                </div>
+            {% else %}
+                {{ form.name(class="form-control form-control-lg") }}
+            {% endif %}
+        </div>
+        <div class="col-md-12">
+            {{ form.hash.label(class="form-control-label") }}
+
+            {% if form.hash.errors %}
+                {{ form.hash(class="form-control form-control-lg is-invalid") }}
+                <div class="invalid-feedback">
+                    {% for error in form.hash.errors %}
+                        <span>{{error}}</span>
+                    {% endfor %}
+                </div>
+            {% else %}
+                {{ form.hash(class="form-control form-control-lg") }}
+            {% endif %}
+        </div>
+        <div class="col-md-12">
+            {{ form.mask.label(class="form-control-label") }}
+
+            {% if form.mask.errors %}
+                {{ form.mask(class="form-control form-control-lg is-invalid") }}
+                <div class="invalid-feedback">
+                    {% for error in form.mask.errors %}
+                        <span>{{error}}</span>
+                    {% endfor %}
+                </div>
+            {% else %}
+                {{ form.mask(class="form-control form-control-lg") }}
+            {% endif %}
+        </div>
+        <div class="col-md-12">
+            {{ form.algorithm.label(class="form-control-label") }}
+
+            {% if form.algorithm.errors %}
+                {{ form.algorithm(class="form-control form-control-lg is-invalid") }}
+                <div class="invalid-feedback">
+                    {% for error in form.algorithm.errors %}
+                        <span>{{error}}</span>
+                    {% endfor %}
+                </div>
+            {% else %}
+                {{ form.algorithm(class="form-control form-control-lg") }}
+            {% endif %}
+        </div>
+        <div class="col-md-12">
+            {{ form.provider.label(class="form-control-label") }}
+
+            {% if form.provider.errors %}
+                {{ form.provider(class="form-control form-control-lg is-invalid") }}
+                <div class="invalid-feedback">
+                    {% for error in form.provider.errors %}
+                        <span>{{error}}</span>
+                    {% endfor %}
+                </div>
+            {% else %}
+                {{ form.provider(class="form-control form-control-lg") }}
+            {% endif %}
+        </div>
+        <div class="col-md-12">
+            {{ form.power.label(class="form-control-label") }}
+
+            {% if form.power.errors %}
+                {{ form.power(class="form-control form-control-lg is-invalid") }}
+                <div class="invalid-feedback">
+                    {% for error in form.power.errors %}
+                        <span>{{error}}</span>
+                    {% endfor %}
+                </div>
+            {% else %}
+                {{ form.power(class="form-control form-control-lg") }}
+            {% endif %}
+        </div>
+        <div class="col-12">
+            {{ form.submit(class="btn btn-primary") }}
+        </div>
+    </form>
+    {%if not current_user.is_authenticated%}
+
+    <div class="pt-3 border-top">
+        <small class="text-muted">
+            Before cracking your hash. <a class="ml-2" href="/login">Sign In !</a>  
+        </small>
+    </div>
+    {%endif%}
+{% endblock %}
