@@ -1,7 +1,7 @@
 from datetime import datetime
-from hash2ash import db, login_manager # Importation de l'instance de la base de données et de l'instance de login_manager
+from itsdangerous import TimedJSONWebSignatureSerializer as Serializer # Importation de la classe Serializer pour générer des tokens
+from hash2ash import db, login_manager, app # Importation de l'instance de la base de données et de l'instance de login_manager
 from flask_login import UserMixin   # Importation de la classe UserMixin qui contient les méthodes de base pour gérer les utilisateurs
-
 
 @login_manager.user_loader # Fonction pour charger un utilisateur 
 def get_user(id_user):
@@ -13,8 +13,22 @@ class Users(db.Model, UserMixin):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(60), nullable=False)
     role = db.Column(db.String(20), nullable=False, default='user')
-    hashes = db.relationship('Hashes', backref='user', lazy=True)
+    hashes = db.relationship('Hashes', backref='user', lazy=True) 
 
+    def get_reset_token(self, expires_sec=1800): # Méthode pour générer un token de réinitialisation de mot de passe qui expire dans 1800 secondes = 30 minutes
+        s = Serializer(app.config['SECRET_KEY'], expires_sec)  
+        return s.dumps({'user_id': self.id_user}).decode('utf-8') # Retourne le token encodé en utf-8
+
+    
+    @staticmethod
+    def verify_reset_token(token): # Méthode pour vérifier le token de réinitialisation de mot de passe
+        s = Serializer(app.config['SECRET_KEY'])
+        try:
+            user_id = s.loads(token)['user_id']
+        except:
+            return None
+        return Users.query.get(user_id)
+    
     def __repr__(self):
         return f"Users('{self.username}', '{self.email}', '{self.role}')"
     def get_id(self):
