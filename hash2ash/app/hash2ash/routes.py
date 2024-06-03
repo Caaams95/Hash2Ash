@@ -1,9 +1,12 @@
 from flask import render_template, url_for, flash, redirect, request, abort
-from hash2ash import app, db, bcrypt
+from hash2ash import app, db, bcrypt, mail
 from hash2ash.models import Users, Instances, Hashes
-from hash2ash.forms import RegistrationForm, LoginForm, CrackStationForm, UpdateAccountForm, AdminUpdateAccountForm   # Importation des classes RegistrationForm et LoginForm depuis forms.py
+from hash2ash.forms import RegistrationForm, LoginForm, CrackStationForm, UpdateAccountForm, AdminUpdateAccountForm, RequestResetForm, ResetPasswordForm   # Importation des classes RegistrationForm et LoginForm depuis forms.py
 from flask_login import login_user, current_user, logout_user, login_required
-
+from flask_mail import Message
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 
 ### Routes
@@ -12,6 +15,7 @@ from flask_login import login_user, current_user, logout_user, login_required
 def home():
     return render_template('home.html', title='Home')
 
+# Route pour l'inscription de l'utilisateur
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if current_user.is_authenticated:
@@ -27,6 +31,7 @@ def register():
         return redirect(url_for('login'))
     return render_template('register.html', title='Register', form=form)
 
+# Route pour la connexion de l'utilisateur
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
@@ -43,12 +48,13 @@ def login():
             flash('Login Unsuccessful. Please check email and password', 'danger')
     return render_template('login.html', title='Login', form=form)
 
+# Route pour la déconnexion de l'utilisateur
 @app.route('/logout', methods=['GET', 'POST'])
 def logout():
     logout_user()
     return redirect(url_for('home'))
 
-
+# Route pour le formulaire de enregistrement d'un hash
 @app.route('/crackstation', methods=['GET', 'POST'])            # Route pour la page de test de hash
 @login_required
 def crackstation():
@@ -64,16 +70,11 @@ def crackstation():
             return redirect(url_for('crackstation'))
         else:
             flash(f'You must be logged in to use Crack Station', 'danger')
-            return redirect(url_for('login'))
-####Pour debbuger le formulaire    
-    # flash(f'Form not validated', 'danger')        
-    # for field, errors in form.errors.items():
-    #     for error in errors:
-    #         flash(f"Error in the {getattr(form, field).label.text} field - {error}")
-####Fin pour debbuger le formulaire    
+            return redirect(url_for('login')) 
 
     return render_template('crackstation.html', title='Crack Station', form=form)
 
+# Route pour la page profil avec les hashes de l'utilisateur
 @app.route('/account', methods=['GET', 'POST'])
 @app.route('/account/myhashes', methods=['GET', 'POST'])
 @login_required
@@ -81,6 +82,7 @@ def account():
     hashes = Hashes.query.filter_by(fk_id_user=current_user.id_user).all()
     return render_template('accountMyhashes.html', title='My Hashes', hashes=hashes)
 
+# Route pour la mise à jour des infos du compte utilisateur
 @app.route('/account/info', methods=['GET', 'POST'])
 def accountInfo():
     form = UpdateAccountForm()
@@ -95,6 +97,7 @@ def accountInfo():
         form.email.data = current_user.email
     return render_template('accountInfo.html', title='My Info', form=form)
 
+# Route pour la mise à jour du mot de passe en etant admin
 @app.route('/adminpanel', methods=['GET', 'POST'])
 @login_required
 def adminpanel():
@@ -120,6 +123,7 @@ def adminpanel():
     users = Users.query.order_by(Users.id_user.desc()).paginate(page=page, per_page=10)
     return render_template('adminpanel.html', title='Admin Panel', form=form, users=users, user_count=user_count)
 
+# Route pour afficher les hashes d'un utilisateur en etant admin
 @app.route('/adminpanel/user_<int:id_user>/hashes')
 @login_required
 def adminpanelUserHashes(id_user):
@@ -131,6 +135,7 @@ def adminpanelUserHashes(id_user):
     hashes = Hashes.query.filter_by(fk_id_user=user.id_user).all()
     return render_template('adminpanelUserHashes.html', title='User Hashes', hashes=hashes, username=username)
 
+# Route pour la suppression d'un hash
 @app.route('/adminpanel/hash_<int:id_hash>/delete', methods=['POST'])
 @login_required
 def delete_hash(id_hash):
@@ -144,7 +149,8 @@ def delete_hash(id_hash):
         return redirect(url_for('account'))
     else:
         return redirect(url_for('adminpanelUserHashes', id_user=hash.fk_id_user))
-
+    
+# Route pour la suppression d'un utilisateur
 @app.route('/adminpanel/user_<int:id_user>/delete', methods=['POST'])
 @login_required
 def delete_user(id_user):
@@ -158,3 +164,53 @@ def delete_user(id_user):
     db.session.commit()
     flash(f'The user '+ user.username + ' has been deleted!', 'success')
     return redirect(url_for('adminpanel'))
+
+def send_reset_email(user):
+    token = user.get_reset_token()
+    msg = MIMEMultipart()
+    msg['From'] = app.config['MAIL_USERNAME']
+    msg['To'] = user.email
+    msg['Subject'] = 'Password Reset Request'
+    body = f'''To reset your password, visit the following link:
+{url_for('reset_token', token=token, _external=True)}
+
+If you did not make this request then simply ignore this email and no changes will be made.
+'''
+    msg.attach(MIMEText(body, 'plain'))
+    # Connexion au serveur SMTP
+    server = smtplib.SMTP(app.config['MAIL_SERVER'], app.config['MAIL_PORT'])
+    server.starttls()  # Sécuriser la connexion
+    server.login(app.config['MAIL_USERNAME'], app.config['MAIL_PASSWORD'])
+    server.sendmail(app.config['MAIL_USERNAME'], user.email, msg.as_string())
+    server.quit()
+
+# Route pour la réinitialisation du mot de passe
+@app.route('/reset_password', methods=['GET', 'POST'])
+def reset_password():
+    if current_user.is_authenticated:
+        return redirect(url_for('home'))
+    form = RequestResetForm()
+    if form.validate_on_submit():
+        user = Users.query.filter_by(email=form.email.data).first()
+        if user:
+            send_reset_email(user)
+        flash('An email has been sent with instructions to reset your password', 'info')
+        return redirect(url_for('login'))
+    return render_template('resetPassword.html', title='Reset Password', form=form)
+
+@app.route('/reset_password/<token>', methods=['GET', 'POST'])
+def reset_token(token):
+    if current_user.is_authenticated:
+        return redirect(url_for('home'))
+    user = Users.verify_reset_token(token)
+    if user is None:
+        flash('That is an invalid or expired token', 'warning')
+        return redirect(url_for('reset_password'))
+    form = ResetPasswordForm()
+    if form.validate_on_submit():
+        hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
+        user.password = hashed_password
+        db.session.commit()
+        flash(f'Your password has been updated !', 'success') ## Si c'est vrai on redirige vers la fonction home
+        return redirect(url_for('login'))
+    return render_template('resetToken.html', title='Reset Password', form=form)
