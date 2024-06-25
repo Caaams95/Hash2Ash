@@ -13,10 +13,13 @@ provider "aws" {
 
 variable "instance_count" {
   description = "Number of instances to create"
+  default     = 0
 }
 
 variable "script_path" {
   description = "File to upload"
+  default     = 0
+
 }
 
 # SSH rule
@@ -84,15 +87,15 @@ resource "aws_instance" "instance-gratuite" {
   }
 
 # EXE on boot=======================
-  provisioner "remote-exec" {
-    inline = [
-      "sudo apt-get update -y && sudo apt-get upgrade -y",  # Update (obligatoire pour trouver le repo hashcat)sudo apt install postgresql
-      "sudo apt install postgresql -y",
-      "sudo apt-get install hashcat -y",  # Install Hashcat
-      "chmod +x /tmp/script.sh",  # Assurez-vous que le script est exécutable
-      "/tmp/script.sh",  # Exécutez le script
-    ]
-  }
+#  provisioner "remote-exec" {
+#    inline = [
+#      "sudo apt-get update -y && sudo apt-get upgrade -y",  # Update (obligatoire pour trouver le repo hashcat)sudo apt install postgresql
+#      "sudo apt install postgresql -y",
+#      "sudo apt-get install hashcat -y",  # Install Hashcat
+#      "chmod +x /tmp/script.sh",  # Assurez-vous que le script est exécutable
+#      "/tmp/script.sh",  # Exécutez le script
+#    ]
+#  }
 
   connection {
     type        = "ssh"
