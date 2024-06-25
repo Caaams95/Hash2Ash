@@ -7,7 +7,7 @@ DB_NAME="initial_db"
 
 DB_TABLE="information_schema.hashes"
 
-echo "Processing..." > /tmp/status.txt
+echo "Processing" > /tmp/status.txt
 
 hashcat -m 400 /tmp/hash.hash /tmp/example.dict --status -O
 hashcat -m 400 /tmp/hash.hash /tmp/example.dict --show
