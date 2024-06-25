@@ -25,7 +25,7 @@ terraform apply -auto-approve -var="instance_count=$new_count" -var="script_path
 sleep 30
 
 # Récupérer toutes les adresses IP publiques de la nouvelle instance créée
-new_instance_ips=($(terraform output -json new_instance_public_ips | jq -r '.[]'))
+instances_details=($(terraform output -json instances_details | jq -r '.[]'))
 
 # Afficher toutes les adresses IP publiques
 #for ip in "${new_instance_ips[@]}"; do
@@ -33,7 +33,8 @@ new_instance_ips=($(terraform output -json new_instance_public_ips | jq -r '.[]'
 #done
 
 # Récupérer la dernière adresse IP publique de la nouvelle instance créée
-last_instance_ip=${new_instance_ips[-1]}
+last_instance_ip=${instances_details[-2]}
+last_instance_name=${instances_details[-4]}
 
 # Afficher la dernière adresse IP publique
-echo "Nouvelle instance créée avec succès. Dernière adresse IP publique : $last_instance_ip"
+echo "Nouvelle instance créée avec succès. Dernière adresse IP publique : $last_instance_name : $last_instance_ip"
