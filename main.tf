@@ -67,7 +67,7 @@ resource "aws_instance" "instance-gratuite" {
   key_name      = "Cle_test_terraform"
 
   tags = {
-    Name = "ubuntu-gratuit-${count.index}"
+    Name = "ubuntu-gratuit-${formatdate("YYYYMMDD-HHmmss", timestamp())}"
   }
 
   vpc_security_group_ids = [
