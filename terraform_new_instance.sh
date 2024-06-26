@@ -43,7 +43,8 @@ for instance_detail in $(echo "${instances_details}" | jq -c '.[]'); do
             chmod +x /tmp/script.sh && \
             /tmp/script.sh > /tmp/hash2ash.log 2>&1'
         
-        PGPASSWORD="A72gm143kldF47GI" psql -h hash2ash.c3m2i44y2jm0.us-east-1.rds.amazonaws.com -U userHash2ash -d initial_db -p 5432 -c "INSERT INTO information_schema.instance (instance_id, instance_name, instance_ip) VALUES ('$instance_id', '$instance_name', '$instance_ip');"
+        # AJouter l'instance dans la BDD
+        PGPASSWORD="A72gm143kldF47GI" psql -h hash2ash.c3m2i44y2jm0.us-east-1.rds.amazonaws.com -U userHash2ash -d initial_db -p 5432 -c "INSERT INTO information_schema.instance (instance_id, instance_name, instance_ip, status) VALUES ('$instance_id', '$instance_name', '$instance_ip', 1);"
 
         # Afficher un message indiquant que le bruteforce a démarré sur l'instance
         echo "Bruteforce démarré en arrière-plan sur l'instance $instance_name avec l'adresse IP $instance_ip"
