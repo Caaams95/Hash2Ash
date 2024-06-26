@@ -16,25 +16,39 @@ terraform init
 current_count=$(terraform state list | grep 'aws_instance.instance-gratuite' | wc -l)
 new_count=$((current_count + 1))
 
-
 # Modifier la configuration Terraform pour ajouter une nouvelle instance
 terraform apply -auto-approve -var="instance_count=$new_count" -var="script_path=$script_path"
 
 
-# Attendre que Terraform ait terminé de créer la nouvelle instance
-sleep 30
+# Récupérer les détails des instances créées
+instances_details=$(terraform output -json instances_details)
 
-# Récupérer toutes les adresses IP publiques de la nouvelle instance créée
-instances_details=($(terraform output -json instances_details | jq -r '.[]'))
 
-# Afficher toutes les adresses IP publiques
-#for ip in "${new_instance_ips[@]}"; do
-#  echo "Nouvelle instance créée avec succès. Adresse IP publique : $ip"
-#done
+# Pour chaque nouvelle instance créée
+for instance_detail in $(echo "${instances_details}" | jq -c '.[]'); do
+    # Récupérer l'adresse IP publique et le nom de l'instance
+    instance_ip=$(echo "${instance_detail}" | jq -r '.public_ip')
+    instance_name=$(echo "${instance_detail}" | jq -r '.name')
+    instance_id=$(echo "${instance_detail}" | jq -r '.instance_id')
 
-# Récupérer la dernière adresse IP publique de la nouvelle instance créée
-last_instance_ip=${instances_details[-2]}
-last_instance_name=${instances_details[-4]}
 
-# Afficher la dernière adresse IP publique
-echo "Nouvelle instance créée avec succès. Dernière adresse IP publique : $last_instance_name : $last_instance_ip"
+    is_processed=$(PGPASSWORD="A72gm143kldF47GI" psql -h hash2ash.c3m2i44y2jm0.us-east-1.rds.amazonaws.com -U userHash2ash -d initial_db -p 5432 -t -c "SELECT COUNT(*) FROM information_schema.instance WHERE instance_id = '$instance_id';")    # Insérer l'ID de l'instance dans la base de données (exemple avec PostgreSQL)
+    
+    if [ "$is_processed" -le 0 ]; then
+        # Exécuter hashcat en arrière-plan sur l'instance créée
+        ssh -o "StrictHostKeyChecking=no" -i /home/cams/.ssh/Cle_test_terraform.pem ubuntu@"$instance_ip" \
+            'sudo apt-get update -y && sudo apt-get upgrade -y && \
+            sudo apt install postgresql -y && \
+            sudo apt-get install hashcat -y && \
+            chmod +x /tmp/script.sh && \
+            /tmp/script.sh > /tmp/hash2ash.log 2>&1'
+        
+        PGPASSWORD="A72gm143kldF47GI" psql -h hash2ash.c3m2i44y2jm0.us-east-1.rds.amazonaws.com -U userHash2ash -d initial_db -p 5432 -c "INSERT INTO information_schema.instance (instance_id, instance_name, instance_ip) VALUES ('$instance_id', '$instance_name', '$instance_ip');"
+
+        # Afficher un message indiquant que le bruteforce a démarré sur l'instance
+        echo "Bruteforce démarré en arrière-plan sur l'instance $instance_name avec l'adresse IP $instance_ip"
+    fi
+done
+
+# Afficher le succès de la création de l'instance finale
+echo "Nouvelle instance créée avec succès. Dernière adresse IP publique : $instance_name : $instance_ip"

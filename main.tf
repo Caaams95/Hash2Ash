@@ -118,6 +118,8 @@ output "instances_details" {
     for instance in aws_instance.instance-gratuite : {
       public_ip = instance.public_ip
       name      = lookup(instance.tags, "Name")
+      instance_id = instance.id
+
     }
   ]
 }
