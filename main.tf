@@ -18,8 +18,21 @@ variable "instance_count" {
 
 variable "script_path" {
   description = "File to upload"
-  default     = 0
+  default     = ""
+}
 
+# Data source to get existing instances
+data "aws_instances" "existing" {
+  filter {
+    name   = "tag:Name"
+    values = ["ubuntu-gratuit*"]
+  }
+}
+
+# Local value to count existing instances
+locals {
+  current_instance_count = length(data.aws_instances.existing.ids)
+  total_instance_count = var.instance_count != 0 ? var.instance_count : local.current_instance_count
 }
 
 # SSH rule
@@ -35,23 +48,21 @@ resource "aws_security_group" "allow_ssh" {
   }
 }
 
-
 resource "aws_security_group" "allow_all" {
   name        = "allow_all"
-  description = "Allow all trafic"
+  description = "Allow all traffic"
 
-  // Règle permettant les connexions sortantes vers toutes les destinations et tous les ports
   egress {
-    from_port       = 0
-    to_port         = 0
-    protocol        = "-1"
-    cidr_blocks     = ["0.0.0.0/0"]
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 }
 
 resource "aws_instance" "instance-gratuite" {
-  count         = var.instance_count
-  ami           = "ami-04b70fa74e45c3917" // Ubuntu
+  count         = local.total_instance_count
+  ami           = "ami-04b70fa74e45c3917" # Ubuntu
   instance_type = "t2.large"
   key_name      = "Cle_test_terraform"
 
@@ -64,42 +75,28 @@ resource "aws_instance" "instance-gratuite" {
     aws_security_group.allow_all.id
   ]
 
-    provisioner "file" {
+  provisioner "file" {
     source      = var.script_path
     destination = "/tmp/script.sh"
   }
 
-#TEST====================
-    provisioner "file" {
+  provisioner "file" {
     source      = "./scripts/lib/example.dict"
     destination = "/tmp/example.dict"
   }
 
-    provisioner "file" {
+  provisioner "file" {
     source      = "./scripts/lib/hash.hash"
     destination = "/tmp/hash.hash"
   }
 
-
-    provisioner "file" {
+  provisioner "file" {
     source      = "./scripts/lib/hash.hash"
     destination = "/tmp/hash2ash/hash.hash"
   }
 
-# EXE on boot=======================
-#  provisioner "remote-exec" {
-#    inline = [
-#      "sudo apt-get update -y && sudo apt-get upgrade -y",  # Update (obligatoire pour trouver le repo hashcat)sudo apt install postgresql
-#      "sudo apt install postgresql -y",
-#      "sudo apt-get install hashcat -y",  # Install Hashcat
-#      "chmod +x /tmp/script.sh",  # Assurez-vous que le script est exécutable
-#      "/tmp/script.sh",  # Exécutez le script
-#    ]
-#  }
-
   connection {
     type        = "ssh"
-    //user        = "ec2-user"
     user        = "ubuntu"
     private_key = file("/home/cams/.ssh/Cle_test_terraform.pem")
     host        = self.public_ip
@@ -107,19 +104,17 @@ resource "aws_instance" "instance-gratuite" {
 
   lifecycle {
     create_before_destroy = true
+    prevent_destroy       = false
   }
 }
 
-//output "new_instance_public_ips" {
- // value = [for instance in aws_instance.instance-gratuite : instance.public_ip]
-#}
 output "instances_details" {
   value = [
     for instance in aws_instance.instance-gratuite : {
-      public_ip = instance.public_ip
-      name      = lookup(instance.tags, "Name")
+      public_ip   = instance.public_ip
+      name        = lookup(instance.tags, "Name")
       instance_id = instance.id
-
     }
   ]
 }
+  
