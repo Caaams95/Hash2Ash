@@ -1,40 +1,43 @@
 #!/bin/bash
 
-# Vérifier si l'argument du chemin du fichier est fourni
-if [ $# -ne 1 ]; then
-    echo "Usage: $0 <path_to_script>"
-    exit 1
-fi
-
-# Récupérer le chemin du fichier script à téléverser et exécuter
-script_path=$1
+status_processing="Processing"
 
 # Initialiser Terraform
 terraform init
 
-# Récupérer le nombre actuel d'instances
-current_count=$(terraform state list | grep 'aws_instance.instance-gratuite' | wc -l)
+# Récupérer le nombre actuel d'instances actives dans l'état Terraform
+current_count=$(terraform state list | grep 'aws_instance.instance_gratuite' | wc -l)
 new_count=$((current_count + 1))
 
+# Appliquer la configuration Terraform avec le nouveau nombre d'instances sans rafraîchir l'état
+terraform apply -refresh=false -auto-approve -var="total_instance_count=$new_count"
 
-# Modifier la configuration Terraform pour ajouter une nouvelle instance
-terraform apply -auto-approve -var="instance_count=$new_count" -var="script_path=$script_path"
+# Récupérer les détails des instances créées
+instances_details=$(terraform output -json instances_details)
 
+# Trouver les détails de la dernière instance créée
+latest_instance=$(echo "$instances_details" | jq -c ".[-1]")
 
-# Attendre que Terraform ait terminé de créer la nouvelle instance
-sleep 30
+# Récupérer l'adresse IP publique et le nom de la nouvelle instance
+instance_ip=$(echo "$latest_instance" | jq -r '.public_ip')
+instance_name=$(echo "$latest_instance" | jq -r '.name')
+instance_id=$(echo "$latest_instance" | jq -r '.instance_id')
 
-# Récupérer toutes les adresses IP publiques de la nouvelle instance créée
-instances_details=($(terraform output -json instances_details | jq -r '.[]'))
+# Insérer l'ID de la nouvelle instance dans la base de données (exemple avec PostgreSQL)
+is_processed=$(PGPASSWORD="A72gm143kldF47GI" psql -h hash2ash.c3m2i44y2jm0.us-east-1.rds.amazonaws.com -U userHash2ash -d initial_db -p 5432 -t -c "SELECT COUNT(*) FROM information_schema.instance WHERE instance_id = '$instance_id';")
 
-# Afficher toutes les adresses IP publiques
-#for ip in "${new_instance_ips[@]}"; do
-#  echo "Nouvelle instance créée avec succès. Adresse IP publique : $ip"
-#done
+if [ "$is_processed" -le 0 ]; then
+    # Ajouter l'instance dans la base de données
+    PGPASSWORD="A72gm143kldF47GI" psql -h hash2ash.c3m2i44y2jm0.us-east-1.rds.amazonaws.com -U userHash2ash -d initial_db -p 5432 -c "INSERT INTO information_schema.instance (instance_id, instance_name, instance_ip, status) VALUES ('$instance_id', '$instance_name', '$instance_ip', '$status_processing');"
 
-# Récupérer la dernière adresse IP publique de la nouvelle instance créée
-last_instance_ip=${instances_details[-2]}
-last_instance_name=${instances_details[-4]}
+    # Exécuter des commandes sur l'instance créée (exemple avec SSH)
+    ssh -o "StrictHostKeyChecking=no" -i /home/cams/.ssh/Cle_test_terraform.pem ubuntu@"$instance_ip" \
+        'sudo apt-get update -y && sudo apt-get upgrade -y && \
+        sudo apt install postgresql -y && \
+        sudo apt-get install hashcat -y && \
+        chmod +x /tmp/script.sh && \
+        /tmp/script.sh'
+fi
 
-# Afficher la dernière adresse IP publique
-echo "Nouvelle instance créée avec succès. Dernière adresse IP publique : $last_instance_name : $last_instance_ip"
+# Afficher le succès de la création de l'instance
+echo "Nouvelle instance créée avec succès. Dernière adresse IP publique : $instance_name : $instance_ip"
