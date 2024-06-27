@@ -57,7 +57,7 @@ resource "aws_instance" "instance_gratuite" {
   ]
 
   provisioner "file" {
-    source      = "./scripts/test_script.sh"
+    source      = "./scripts/script.sh"
     destination = "/tmp/script.sh"
   }
 
