@@ -11,31 +11,12 @@ provider "aws" {
   region = "us-east-1"
 }
 
-variable "instance_count" {
-  description = "Number of instances to create"
+variable "total_instance_count" {
+  description = "Total number of instances to create"
+  type        = number
   default     = 0
 }
 
-variable "script_path" {
-  description = "File to upload"
-  default     = ""
-}
-
-# Data source to get existing instances
-data "aws_instances" "existing" {
-  filter {
-    name   = "tag:Name"
-    values = ["ubuntu-gratuit*"]
-  }
-}
-
-# Local value to count existing instances
-locals {
-  current_instance_count = length(data.aws_instances.existing.ids)
-  total_instance_count = var.instance_count != 0 ? var.instance_count : local.current_instance_count
-}
-
-# SSH rule
 resource "aws_security_group" "allow_ssh" {
   name        = "allow_ssh"
   description = "Allow incoming SSH traffic"
@@ -60,14 +41,14 @@ resource "aws_security_group" "allow_all" {
   }
 }
 
-resource "aws_instance" "instance-gratuite" {
-  count         = local.total_instance_count
+resource "aws_instance" "instance_gratuite" {
+  count         = var.total_instance_count
   ami           = "ami-04b70fa74e45c3917" # Ubuntu
   instance_type = "t2.large"
   key_name      = "Cle_test_terraform"
 
   tags = {
-    Name = "ubuntu-gratuit-${formatdate("YYYYMMDD-HHmmss", timestamp())}"
+    Name = "ubuntu-gratuit-${count.index}"
   }
 
   vpc_security_group_ids = [
@@ -76,7 +57,7 @@ resource "aws_instance" "instance-gratuite" {
   ]
 
   provisioner "file" {
-    source      = var.script_path
+    source      = "./scripts/test_script.sh"
     destination = "/tmp/script.sh"
   }
 
@@ -102,19 +83,17 @@ resource "aws_instance" "instance-gratuite" {
     host        = self.public_ip
   }
 
-  lifecycle {
-    create_before_destroy = true
-    prevent_destroy       = false
-  }
+  #lifecycle {
+  #  ignore_changes = [ami, instance_type]
+  #}
 }
 
 output "instances_details" {
   value = [
-    for instance in aws_instance.instance-gratuite : {
+    for instance in aws_instance.instance_gratuite : {
       public_ip   = instance.public_ip
       name        = lookup(instance.tags, "Name")
       instance_id = instance.id
     }
   ]
 }
-  
