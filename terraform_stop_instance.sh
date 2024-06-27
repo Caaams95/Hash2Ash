@@ -15,7 +15,6 @@ terraform_instances=$(terraform state list | grep 'aws_instance.instance-gratuit
 # Trouver l'index de l'instance dans l'état Terraform par son ID AWS
 for instance in $terraform_instances; do
   current_id=$(terraform state show $instance | grep "id                                   =" | awk '{print $3}' | tr -d '"')
-  echo "$instance_id == $current_id"
   if [ "$current_id" == "$instance_id" ]; then
     # Supprimer l'instance de l'état Terraform
     terraform state rm $instance
@@ -24,7 +23,6 @@ for instance in $terraform_instances; do
 done
 
 # Terminer l'instance avec AWS CLI
-echo "aws ec2 terminate-instances --instance-ids $instance_id"
 aws ec2 terminate-instances --instance-ids "$instance_id"
 
 # Mettre à jour le statut dans la base de données
