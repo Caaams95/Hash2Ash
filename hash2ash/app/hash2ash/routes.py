@@ -1,5 +1,5 @@
 from flask import render_template, url_for, flash, redirect, request, abort
-from hash2ash import app, db, bcrypt, mail
+from hash2ash import app, db, bcrypt, mail, s3
 from hash2ash.models import Users, Instances, Hashes
 from hash2ash.forms import RegistrationForm, LoginForm, CrackStationForm, UpdateAccountForm, AdminUpdateAccountForm, RequestResetForm, ResetPasswordForm   # Importation des classes RegistrationForm et LoginForm depuis forms.py
 from flask_login import login_user, current_user, logout_user, login_required
@@ -7,6 +7,11 @@ from flask_mail import Message
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+import secrets
+from werkzeug.utils import secure_filename
+import os
+import tempfile
+import json
 
 
 ### Routes
@@ -54,15 +59,44 @@ def logout():
     logout_user()
     return redirect(url_for('home'))
 
+def save_and_upload_file(file, user_id, file_type):
+    """
+    Sauvegarde un fichier temporairement et l'upload sur S3.
+    
+    :param file: Le fichier à sauvegarder et uploader.
+    :param user_id: L'identifiant de l'utilisateur, utilisé pour nommer le fichier.
+    :param file_type: Le type de fichier ('hash' ou 'custom_wordlist').
+    :return: L'url du fichier sauvegardé.
+    """
+    file_name = secure_filename(f"{secrets.token_bytes(10).hex()}_{user_id}_{file_type}.txt")
+    temp_dir = tempfile.mkdtemp()
+    temp_path = os.path.join(temp_dir, file_name)
+    file.save(temp_path)
+    s3.upload_file(temp_path, app.config['BUCKET_NAME'], file_name)  # Utiliser le chemin temporaire pour l'upload
+    # Nettoyer le fichier temporaire après l'upload
+    os.remove(temp_path)
+    os.rmdir(temp_dir)
+    file_url = f"https://{app.config['BUCKET_NAME']}.s3.{app.config['AWS_REGION_NAME']}.amazonaws.com/{file_name}"
+    return file_url
+
 # Route pour le formulaire de enregistrement d'un hash
 @app.route('/crackstation', methods=['GET', 'POST'])            # Route pour la page de test de hash
 @login_required
 def crackstation():
     form = CrackStationForm()
     if form.validate_on_submit():
-        #flash(f'Form validated', 'info') # Pour debbuger le formulaire
+        #flash(f'form.wordlist.data', 'info') # Pour debbuger le formulaire
         if current_user.is_authenticated:
-            hash = Hashes(hash=form.hash.data, mask=form.mask.data, name=form.name.data ,algorithm=form.algorithm.data, power=form.power.data, provider=form.provider.data, status='In Queue', progress=0, price=0, fk_id_user=current_user.id_user)
+            
+            url_hash = save_and_upload_file(form.hash.data, current_user.id_user, 'hash')
+
+            form.wordlist.data = None if not form.wordlist.data else json.dumps(form.wordlist.data)
+            if form.custom_wordlist.data:
+                url_custom_wordlist = save_and_upload_file(form.custom_wordlist.data, current_user.id_user, 'custom_wordlist')
+            else:
+                url_custom_wordlist = None
+            
+            hash = Hashes(hash=url_hash, name=form.name.data ,algorithm=form.algorithm.data, wordlist=form.wordlist.data, custom_wordlist=url_custom_wordlist ,power=form.power.data, provider=form.provider.data, status='In Queue', progress=0, price=0, fk_id_user=current_user.id_user)
             db.session.add(hash)
             db.session.commit()
             #flash(f'Hash added to database', 'info') # Pour debbuger le formulaire
@@ -73,6 +107,7 @@ def crackstation():
             return redirect(url_for('login')) 
 
     return render_template('crackstation.html', title='Crack Station', form=form)
+
 
 # Route pour la page profil avec les hashes de l'utilisateur
 @app.route('/account', methods=['GET', 'POST'])

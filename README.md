@@ -22,7 +22,7 @@ Pour voir l'expérieur utilisateur créer toi un compte sur la page login
 ### Si le fichier  hash2ash/app/instance/appdb.db n'existe pas (Attention ça supprime la bdd)
 ```bash
 python3
-from run.py import db, app
+from run import db, app
 
 with app.app_context():
     db.drop_all()

@@ -37,13 +37,15 @@ class Users(db.Model, UserMixin):
 class Instances(db.Model):
     id_instance = db.Column(db.Integer, primary_key=True)
     type_instance = db.Column(db.String(50), nullable=False)
-    id_arch = db.Column(db.String(50), nullable=True)
+    id_arch = db.Column(db.String(50), nullable=True) ## id_provider
     price_provider = db.Column(db.Float, nullable=False)
     price_hash2ash = db.Column(db.Float, nullable=False)
+    date_start = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    date_shutdown = db.Column(db.DateTime, nullable=True)
     hashes = db.relationship('Hashes', backref='instance', lazy=True)
 
     def __repr__(self):
-        return f"instances('{self.type_instance}', '{self.id_arch}', '{self.price_provider}', '{self.price_hash2ash}')"
+        return f"instances('{self.type_instance}', '{self.id_arch}', '{self.price_provider}', '{self.date_start}', '{self.date_shutdown}','{self.price_hash2ash}')"
     
 class Hashes(db.Model):
     id_hash = db.Column(db.Integer, primary_key=True)
@@ -52,9 +54,10 @@ class Hashes(db.Model):
     date_start = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     date_end = db.Column(db.DateTime, nullable=True)
     name = db.Column(db.String(60), nullable=False)
-    hash = db.Column(db.String(140), nullable=False)
+    hash = db.Column(db.String(255), nullable=False)
     power = db.Column(db.String(20), nullable=False)
-    mask = db.Column(db.String(140), nullable=False)
+    wordlist = db.Column(db.String(140), nullable=True)
+    custom_wordlist = db.Column(db.String(140), nullable=True)
     algorithm = db.Column(db.String(20), nullable=False)
     result = db.Column(db.String(140), nullable=True) ## Hash déchiffré
     status = db.Column(db.String(20), nullable=False)
@@ -64,4 +67,4 @@ class Hashes(db.Model):
 
 
     def __repr__(self):
-        return f"Hashes('{self.fk_id_user}', '{self.fk_id_instance}', '{self.date_start}', '{self.date_end}', '{self.name}', '{self.hash}', '{self.algorithm}', '{self.result}', '{self.status}', '{self.provider}', '{self.progress}', '{self.price}')"
+        return f"Hashes('{self.name}', '{self.hash}', '{self.power}', '{self.wordlist}', '{self.custom_wordlist}', '{self.algorithm}', '{self.result}', '{self.status}', '{self.progress}', '{self.price}')"
