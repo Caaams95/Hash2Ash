@@ -63,6 +63,7 @@
     <div class="col-md-12">
         {{ form.algorithm.label(class="form-control-label") }}
         {{ form.algorithm(class="form-control form-control-lg") }}
+        
         {% if form.algorithm.errors %}
             <div class="invalid-feedback">
                 {% for error in form.algorithm.errors %}
@@ -110,16 +111,7 @@
 <link href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.6.1/dist/select2-bootstrap4.min.css" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
-<style>
-    .select2-results__options {
-        max-height: 200px; /* Adjust this value to change the max height */
-        overflow-y: auto;
-    }
-    .select2-container--bootstrap4 .select2-dropdown {
-        max-height: 200px; /* Adjust this value to change the max height */
-        overflow-y: auto;
-    }
-</style>
+
 
 <script>
     $(document).ready(function() {
