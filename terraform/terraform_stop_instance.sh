@@ -2,7 +2,7 @@
 
 # Vérifiez si l'ID de l'instance est passé en argument
 if [ $# -ne 1 ]; then
-    echo "Usage: $0 <instance_id>"
+    echo "Usage: $0 <id_arch>"
     exit 1
 fi
 
@@ -26,9 +26,9 @@ done
 aws ec2 terminate-instances --instance-ids "$instance_id"
 
 # Mettre à jour le statut dans la base de données
-status_shutdown="Shutdown"
-PGPASSWORD='A72gm143kldF47GI' psql -U userHash2ash -h hash2ash.c3m2i44y2jm0.us-east-1.rds.amazonaws.com -p 5432 -d initial_db -c "UPDATE information_schema.instance SET status='$status_shutdown' WHERE instance_id='$instance_id';"
-PGPASSWORD='A72gm143kldF47GI' psql -U userHash2ash -h hash2ash.c3m2i44y2jm0.us-east-1.rds.amazonaws.com -p 5432 -d initial_db -c "UPDATE information_schema.instance SET date_shutdown=now() WHERE instance_id='$instance_id';"
+status_shutdown="Terminate"
+PGPASSWORD='C5yAn39f8Tm7U13z' psql -U userHash2ash -h db-hash2ash-prod.c3m2i44y2jm0.us-east-1.rds.amazonaws.com -p 5432 -d hash2ash -c "UPDATE public.instances SET date_shutdown=now() WHERE id_arch='$instance_id';"
+PGPASSWORD='C5yAn39f8Tm7U13z' psql -U userHash2ash -h db-hash2ash-prod.c3m2i44y2jm0.us-east-1.rds.amazonaws.com -p 5432 -d hash2ash -c "UPDATE public.instances SET status='$status_shutdown' WHERE id_arch='$instance_id';"
 
 # Afficher le succès de la suppression de l'instance
 echo "Instance supprimée avec succès : $instance_id"
