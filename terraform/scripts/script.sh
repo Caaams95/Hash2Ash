@@ -6,7 +6,7 @@ DB_PORT="5432"
 DB_NAME="hash2ash"
 
 TABLE_HASHES="public.hashes"
-
+path_hash="/tmp/hash.txt"
 if [ $# -ne 2 ]; then
     echo "Usage: $0 <id_arch> <id_hash>"
     exit 1
@@ -14,9 +14,30 @@ fi
 
 id_arch=$1
 id_hash=$2
+path_result="/tmp/result-$id_arch.txt"
+# =========== Recuperer le Hash depuis S3 ======================================
+# Reda uploadera une url dans la table public.hashes.hash
+# TODO
+# url_hash=select hash from public.hashes where id_hash = $id_hash
+# wget $url_hash -O $path_hash
+# ...
+# modifier le hashcat pour qu il prenne en entré : path_hash 
+# ==============================================================================
+
+# =========== Upload le url hash dans BDD ======================================
+## Upload local file to bucket S3
+##      aws s3 cp $path_result s3://hash2ash-wordlist/$path_result
+# 
+# Générer le lien de s3://hash2ash-wordlist/$path_result avec une commande aws
+# Upload le lien généré en BDD dans hashes.hash
+# 
+# 
+# ==============================================================================
 
 
-# ===========Generer wordlist final (defaut + custom) ======================================
+
+
+# =========== Generer wordlist final (defaut + custom) ======================================
 temp_wordlist_file="/tmp/wordlist_temp.txt"
 final_wordlist_file="/tmp/wordlist.txt"
 custom_worldist_file=/tmp/custom_worldist_file.txt
@@ -50,8 +71,6 @@ fi
 sort $temp_wordlist_file | uniq > $final_wordlist_file
 rm $temp_wordlist_file
 
-
-
 # ===========================================
 
 
@@ -61,7 +80,7 @@ id_instance=$(PGPASSWORD='C5yAn39f8Tm7U13z' psql -U userHash2ash -h db-hash2ash-
 PGPASSWORD='C5yAn39f8Tm7U13z' psql -U userHash2ash -h db-hash2ash-prod.c3m2i44y2jm0.us-east-1.rds.amazonaws.com -p 5432 -d hash2ash -c "UPDATE public.hashes SET fk_id_instance=$id_instance WHERE id_hash='$id_hash';"
 
 #hashcat -m 400 /tmp/hash.hash $final_wordlist_file --status -O
-hashcat -m 400 /tmp/hash.hash /tmp/example.dict --status -O
+hashcat -m 400 /tmp/hash.hash $final_wordlist_file --status -O
 # hashcat is processing, wait...
 
 HASHCAT_EXIT_CODE=$?
@@ -77,8 +96,8 @@ if [ $HASHCAT_EXIT_CODE -ne 0 ]; then
 else
     # password trouvé
     echo "Password Cracked"
-    hashcat -m 400 /tmp/hash.hash /tmp/example.dict --show
-    hashcat -m 400 /tmp/hash.hash /tmp/example.dict --show > /tmp/result.txt
+    hashcat -m 400 /tmp/hash.hash $final_wordlist_file --show
+    hashcat -m 400 /tmp/hash.hash $final_wordlist_file --show > $path_result
 
     # Lire le fichier de sortie de Hashcat
     #hash:password
@@ -88,7 +107,7 @@ else
             # Mettre à jour la base de données en une seule ligne
             PGPASSWORD="$DB_PASSWORD" psql -U $DB_USERNAME -h $DB_HOST -p $DB_PORT -d $DB_NAME -c "UPDATE $TABLE_HASHES SET result='$password' WHERE id_hash=$id_hash;"
             fi
-    done < /tmp/result.txt
+    done < $path_result
 
 fi
 
