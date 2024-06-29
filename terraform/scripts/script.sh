@@ -7,8 +7,8 @@ DB_NAME="hash2ash"
 
 TABLE_HASHES="public.hashes"
 
-if [ $# -ne  ]; then
-    echo "Usage: $0 <id_arch>"
+if [ $# -ne 2 ]; then
+    echo "Usage: $0 <id_arch> <id_hash>"
     exit 1
 fi
 
@@ -27,13 +27,14 @@ HASHCAT_EXIT_CODE=$?
 # 1 = Not found
 
 
-
 # Vérifie le code de sortie de hashcat
 if [ $HASHCAT_EXIT_CODE -ne 0 ]; then
     # password pas trouvé
-    PGPASSWORD="$DB_PASSWORD" psql -U $DB_USERNAME -h $DB_HOST -p $DB_PORT -d $DB_NAME -c "UPDATE $TABLE_HASHES SET status='Not Found' WHERE id_hash=$id_hash ;"
+    echo "Password Exhausted"
+    PGPASSWORD="$DB_PASSWORD" psql -U $DB_USERNAME -h $DB_HOST -p $DB_PORT -d $DB_NAME -c "UPDATE $TABLE_HASHES SET status='NotFound' WHERE id_hash=$id_hash ;"
 else
     # password trouvé
+    echo "Password Cracked"
     hashcat -m 400 /tmp/hash.hash /tmp/example.dict --show
     hashcat -m 400 /tmp/hash.hash /tmp/example.dict --show > /tmp/result.txt
 

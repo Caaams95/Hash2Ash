@@ -9,6 +9,7 @@ HASHCAT_ALGORITHMS = [
     ('', 'Choice ...'),
     ('0', 'MD5'),
     ('100', 'SHA1'),
+    ('400', 'phpass, WordPress (MD5), Joomla (MD5)'),
     ('1400', 'SHA-256'),
     ('1700', 'SHA-512'),
     ('1800', 'sha512crypt $6$, SHA-512 (Unix)'),

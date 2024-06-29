@@ -12,9 +12,10 @@ if [ $# -ne 1 ]; then
 fi
 
 id_hash=$1
+echo id_hash = $id_hash
+PGPASSWORD='C5yAn39f8Tm7U13z' psql -U userHash2ash -h db-hash2ash-prod.c3m2i44y2jm0.us-east-1.rds.amazonaws.com -p 5432 -d hash2ash -c "UPDATE public.hashes SET status='Initialisation' WHERE id_hash='$id_hash';"
 
 status_processing="Processing"
-
 # Initialiser Terraform
 terraform init
 
