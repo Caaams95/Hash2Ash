@@ -1,2 +1,13 @@
+flask
+flask-wtf
+email_validator
+flask-sqlalchemy
+flask-bcrypt
+flask-login
+flask-mail
+itsdangerous==2.0.1
+python-dotenv
+psycopg2
+boto3
 awscli
 terraform

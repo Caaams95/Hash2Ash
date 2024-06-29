@@ -1,0 +1,241 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<h1 class="mb-5">Welcome to the {{ title }} page</h1>
+<form id="crackstation-form" class="row g-3 mx-auto pb-3" method="post" enctype="multipart/form-data">
+    {{ form.hidden_tag() }}
+    <div class="col-md-12">
+        {{ form.name.label(class="form-control-label") }}
+        {{ form.name(class="form-control form-control-lg") }}
+        {% if form.name.errors %}
+            <div class="invalid-feedback">
+                {% for error in form.name.errors %}
+                    <span>{{ error }}</span>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+    <div class="col-md-12">
+        {{ form.hash.label(class="form-control-label") }}
+        {{ form.hash(class="form-control form-control-lg") }}
+        {% if form.hash.errors %}
+            <div class="invalid-feedback">
+                {% for error in form.hash.errors %}
+                    <span>{{ error }}</span>
+                {% endfor %}
+            </div>
+        {% endif %}
+        <div id="hash-error" class="invalid-feedback"></div>
+    </div>
+    <div class="col-md-12">
+        {{ form.wordlist.label(class="form-control-label") }}
+        <div class="form-check">
+            {% for subfield in form.wordlist %}
+            <div class="form-check">
+                {{ subfield(class="form-check-input") }}
+                {{ subfield.label(class="form-check-label") }}
+            </div>
+            {% endfor %}
+        </div>
+        {% if form.wordlist.errors %}
+            <div class="invalid-feedback d-block">
+                {% for error in form.wordlist.errors %}
+                    <span>{{ error }}</span>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+    <div class="col-md-12">
+        {{ form.use_custom_wordlist(class="form-check-input") }}
+        {{ form.use_custom_wordlist.label(class="form-check-label") }}
+    </div>
+    <div class="col-md-12">
+        {{ form.custom_wordlist.label(class="form-control-label") }}
+        {{ form.custom_wordlist(class="form-control form-control-lg") }}
+        {% if form.custom_wordlist.errors %}
+            <div class="invalid-feedback">
+                {% for error in form.custom_wordlist.errors %}
+                    <span>{{ error }}</span>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+    <div class="col-md-12">
+        {{ form.algorithm.label(class="form-control-label") }}
+        {{ form.algorithm(class="form-control form-control-lg") }}
+        
+        {% if form.algorithm.errors %}
+            <div class="invalid-feedback">
+                {% for error in form.algorithm.errors %}
+                    <span>{{ error }}</span>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+    <div class="col-md-12">
+        {{ form.provider.label(class="form-control-label") }}
+        {{ form.provider(class="form-control form-control-lg") }}
+        {% if form.provider.errors %}
+            <div class="invalid-feedback">
+                {% for error in form.provider.errors %}
+                    <span>{{ error }}</span>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+    <div class="col-md-12">
+        {{ form.power.label(class="form-control-label") }}
+        {{ form.power(class="form-control form-control-lg") }}
+        {% if form.power.errors %}
+            <div class="invalid-feedback">
+                {% for error in form.power.errors %}
+                    <span>{{ error }}</span>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+    <div class="col-12">
+        {{ form.submit(class="btn btn-primary") }}
+    </div>
+</form>
+{% if not current_user.is_authenticated %}
+<div class="pt-3 border-top">
+    <small class="text-muted">
+        Before cracking your hash. <a class="ml-2" href="/login">Sign In !</a>  
+    </small>
+</div>
+{% endif %}
+
+<!-- Include Select2 CSS and JS with Bootstrap 4 theme -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.6.1/dist/select2-bootstrap4.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+
+
+<script>
+    $(document).ready(function() {
+        // Initial check and setup based on the checkbox state at page load
+        toggleCustomWordlist($('#crackstation-form input[type="checkbox"][name="use_custom_wordlist"]').is(':checked'));
+
+        // Event handler for checkbox changes to toggle the custom wordlist input field
+        $('#crackstation-form input[type="checkbox"][name="use_custom_wordlist"]').change(function() {
+            toggleCustomWordlist($(this).is(':checked'));
+        });
+
+        function toggleCustomWordlist(enable) {
+            var customWordlistInput = $('#crackstation-form input[type="file"][name="custom_wordlist"]');
+            if (enable) {
+                customWordlistInput.prop('disabled', false);
+                customWordlistInput.prop('required', true);
+                customWordlistInput.parent().removeClass('disabled');
+            } else {
+                customWordlistInput.prop('disabled', true);
+                customWordlistInput.prop('required', false);
+                customWordlistInput.parent().addClass('disabled');
+            }
+        }
+
+        // Existing logic for file type and size validation
+        $('#crackstation-form input[type="file"]').on('change', function() {
+            var fileInput = $(this)[0];
+            var file = fileInput.files[0];
+            var errorMessage = '';
+
+            if (file) {
+                var fileType = file.name.split('.').pop().toLowerCase();
+                if (fileType !== 'txt') {
+                    errorMessage = 'TXT files only!';
+                } else if (file.size > 200 * 1024 * 1024) { // 200MB
+                    errorMessage = 'File size must be less than 200 MB';
+                }
+            } else {
+                errorMessage = 'This field is required';
+            }
+
+            var hashField = $(fileInput);
+            var hashError = $('#hash-error');
+
+            if (errorMessage) {
+                hashField.addClass('is-invalid');
+                hashError.text(errorMessage).show();
+            } else {
+                hashField.removeClass('is-invalid');
+                hashError.text('').hide();
+            }
+        });
+
+        $('#crackstation-form').on('submit', function(event) {
+            var fileInput = $('#crackstation-form input[type="file"]')[0];
+            var file = fileInput.files[0];
+            var errorMessage = '';
+
+            if (file) {
+                var fileType = file.name.split('.').pop().toLowerCase();
+                if (fileType !== 'txt') {
+                    errorMessage = 'TXT files only!';
+                } else if (file.size > 200 * 1024 * 1024) { // 200MB
+                    errorMessage = 'File size must be less than 200 MB';
+                }
+            } else {
+                errorMessage = 'This field is required';
+            }
+
+            var hashField = $(fileInput);
+            var hashError = $('#hash-error');
+
+            if (errorMessage) {
+                hashField.addClass('is-invalid');
+                hashError.text(errorMessage).show();
+                event.preventDefault();
+            } else {
+                hashField.removeClass('is-invalid');
+                hashError.text('').hide();
+            }
+        });
+
+        function validateWordlistSelection() {
+            var selectedWordlists = $('#crackstation-form input[type="checkbox"][name="wordlist"]:checked').length;
+            var customWordlistUploaded = $('#crackstation-form input[type="file"][name="custom_wordlist"]').val() !== '';
+            var useCustomWordlistChecked = $('#crackstation-form input[type="checkbox"][name="use_custom_wordlist"]').is(':checked');
+
+            // Vérifier si une wordlist prédéfinie est sélectionnée ou si une wordlist custom est téléchargée
+            if (selectedWordlists === 0 && (!useCustomWordlistChecked || (useCustomWordlistChecked && !customWordlistUploaded))) {
+                alert('Please select at least one wordlist or upload a custom wordlist.');
+                return false;
+            }
+            return true;
+        }
+
+        $('#crackstation-form').on('submit', function(event) {
+            // Empêcher la soumission si la validation échoue
+            if (!validateWordlistSelection()) {
+                event.preventDefault();
+            }
+        });
+
+        // Gestion de l'activation/désactivation du champ custom wordlist
+        function toggleCustomWordlist(enable) {
+            var customWordlistInput = $('#crackstation-form input[type="file"][name="custom_wordlist"]');
+            if (enable) {
+                customWordlistInput.prop('disabled', false);
+                customWordlistInput.prop('required', true);
+                customWordlistInput.parent().removeClass('disabled');
+            } else {
+                customWordlistInput.prop('disabled', true);
+                customWordlistInput.prop('required', false);
+                customWordlistInput.parent().addClass('disabled');
+            }
+        }
+
+        // Initialiser l'état du formulaire basé sur l'état de la checkbox 'Use Custom Wordlist'
+        toggleCustomWordlist($('#crackstation-form input[type="checkbox"][name="use_custom_wordlist"]').is(':checked'));
+
+        // Événement pour la checkbox 'Use Custom Wordlist'
+        $('#crackstation-form input[type="checkbox"][name="use_custom_wordlist"]').change(function() {
+            toggleCustomWordlist($(this).is(':checked'));
+        });
+    });
+</script>
+
+{% endblock %}
