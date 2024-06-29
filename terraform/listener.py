@@ -27,8 +27,18 @@ terminate   = "Terminate"
 cracked     = "Cracked"
 notfound    = "NotFound"
 processing  = "Processing"
-## inqueue     = "In queue" # Default input by other script
+inqueue     = "In Queue"
 
+def launch_newinstance():
+    # Launch new instance
+    cursor.execute(f"SELECT id_hash FROM public.hashes WHERE status='{inqueue}';")
+    results=cursor.fetchall()
+    if results:
+        for result in results:
+            id_hash =  result[0]
+            subprocess.run(f"./terraform_new_instance.sh {id_hash}", shell=True, check=True)
+            print(f"Launch instance for id_hash : {id_hash} .")
+    
 
 def instance_terminate():
     # Shutdown instance hash find
@@ -66,7 +76,7 @@ def hash_notfound(): # Mixer avec hash_terminate()
 
 def hash_processing():
     # Shutdown instance hash find
-    cursor.execute(f"SELECT id_arch FROM public.instances LEFT JOIN public.hashes ON public.hashes.fk_id_instance=public.instances.id_instance WHERE public.hashes.result IS NULL AND public.instances.status = '{processing}' AND public.hashes.status != '{processing}' ;")
+    cursor.execute(f"SELECT id_arch FROM public.instances LEFT JOIN public.hashes ON public.hashes.fk_id_instance=public.instances.id_instance WHERE public.hashes.result IS NULL AND public.instances.status = '{processing}' AND public.hashes.status != '{processing}' AND public.hashes.status != '{notfound}' ;")
     results=cursor.fetchall()
     if results:
         for result in results:
@@ -78,6 +88,7 @@ def hash_processing():
 # Boucle pour check les update de la bdd
 try:
     while True:
+        launch_newinstance()
         instance_terminate()
         hash_cracked()
         hash_notfound()
