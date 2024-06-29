@@ -15,10 +15,52 @@ fi
 id_arch=$1
 id_hash=$2
 
+
+# ===========Generer wordlist final (defaut + custom) ======================================
+temp_wordlist_file="/tmp/wordlist_temp.txt"
+final_wordlist_file="/tmp/wordlist.txt"
+custom_worldist_file=/tmp/custom_worldist_file.txt
+
+id_instance=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -t -c "SELECT id_instance FROM public.instances WHERE id_arch='$id_arch';" | xargs)
+echo "id_instance = $id_instance"
+
+# Exécuter la requête SQL pour récupérer les wordlists
+wordlists=$(PGPASSWORD=$DB_PASSWORD psql -U $DB_USERNAME -h $DB_HOST -p $DB_PORT -d $DB_NAME -t -c "SELECT wordlist FROM public.hashes WHERE fk_id_instance = '$id_instance';"| tr -d '[:space:]')
+echo "wordlists = $wordlists"
+
+# Ajouter chaque wordlist locale au fichier temporaire
+# Supprimer les [] et espaces
+formatted_input=$(echo $wordlists | tr -d '[]' | tr -d ' ')
+
+# Loop through the elements and call process_element.sh with each one
+for wordlist in $(echo $formatted_input | tr ',' '\n' | awk -F'"' '{print $2}'); do
+    wget "https://hash2ash-wordlist.s3.amazonaws.com/$wordlist.txt" -O /tmp/$wordlist.txt
+    cat /tmp/$wordlist.txt >> $temp_wordlist_file
+done
+
+url_custom_list=$(PGPASSWORD=$DB_PASSWORD psql -U $DB_USERNAME -h $DB_HOST -p $DB_PORT -d $DB_NAME -t -c "SELECT custom_wordlist FROM public.hashes WHERE fk_id_instance = '$id_instance';"| xargs)
+echo "url_custom_list = $url_custom_list"
+
+if [ -n "$url_custom_list" ]; then
+    echo "url cutom list exist"
+    wget "$url_custom_list" -O $custom_worldist_file
+    cat "$custom_worldist_file" >> $temp_wordlist_file
+fi
+
+sort $temp_wordlist_file | uniq > $final_wordlist_file
+rm $temp_wordlist_file
+
+
+
+# ===========================================
+
+
+
 # donne le fk_id_instance au hash
 id_instance=$(PGPASSWORD='C5yAn39f8Tm7U13z' psql -U userHash2ash -h db-hash2ash-prod.c3m2i44y2jm0.us-east-1.rds.amazonaws.com -p 5432 -d hash2ash -t -c "SELECT id_instance FROM public.instances WHERE id_arch = '$id_arch';" | tr -d '[:space:]')
 PGPASSWORD='C5yAn39f8Tm7U13z' psql -U userHash2ash -h db-hash2ash-prod.c3m2i44y2jm0.us-east-1.rds.amazonaws.com -p 5432 -d hash2ash -c "UPDATE public.hashes SET fk_id_instance=$id_instance WHERE id_hash='$id_hash';"
 
+#hashcat -m 400 /tmp/hash.hash $final_wordlist_file --status -O
 hashcat -m 400 /tmp/hash.hash /tmp/example.dict --status -O
 # hashcat is processing, wait...
 
