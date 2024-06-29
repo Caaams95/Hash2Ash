@@ -1,6 +1,8 @@
-import psycopg2
+import asyncio
+import concurrent.futures
 import subprocess
-import time
+import psycopg2
+
 # pip install psycopg2-binary -> required 
 
 print("start listener.py")
@@ -14,89 +16,107 @@ db_config = {
     'dbname': 'hash2ash'
 }
 
-conn = psycopg2.connect(**db_config)
-cursor = conn.cursor()
-
-
-# Instance
+# Constantes pour les états
 terminate   = "Terminate"
-## processing  = "Processing" # Default input by other script
-## stop        = "Stop"
-
-# Hash
 cracked     = "Cracked"
 notfound    = "NotFound"
 processing  = "Processing"
 inqueue     = "In Queue"
 
+def get_db_connection():
+    return psycopg2.connect(**db_config)
+
 def launch_newinstance():
-    # Launch new instance
+    conn = get_db_connection()
+    cursor = conn.cursor()
     cursor.execute(f"SELECT id_hash FROM public.hashes WHERE status='{inqueue}';")
-    results=cursor.fetchall()
+    results = cursor.fetchall()
     if results:
         for result in results:
-            id_hash =  result[0]
+            id_hash = result[0]
             subprocess.run(f"./terraform_new_instance.sh {id_hash}", shell=True, check=True)
-            print(f"Launch instance for id_hash : {id_hash} .")
-    
-
-def instance_terminate():
-    # Shutdown instance hash find
-    cursor.execute(f"SELECT id_arch FROM public.instances LEFT JOIN public.hashes ON public.hashes.fk_id_instance=public.instances.id_instance WHERE public.hashes.result IS NOT NULL AND public.instances.status != '{terminate}';")
-    results=cursor.fetchall()
-    if results:
-        for result in results:
-            id_arch =  result[0]
-            subprocess.run(f"./instance-status.sh {id_arch} '{terminate}'", shell=True, check=True)
-            subprocess.run(f"./terraform_stop_instance.sh {id_arch}", shell=True, check=True)
-
-            print(f"Instance {terminate} : {id_arch} .")
-        
-def hash_cracked():
-    # Shutdown instance hash find
-    cursor.execute(f"SELECT id_arch FROM public.instances LEFT JOIN public.hashes ON public.hashes.fk_id_instance=public.instances.id_instance WHERE public.hashes.result IS NOT NULL AND public.hashes.status != '{cracked}';")
-    results=cursor.fetchall()
-    if results:
-        for result in results:
-            id_arch =  result[0]
-            subprocess.run(f"./hash-status.sh {id_arch} '{cracked}'", shell=True, check=True)
-            print(f"Hash {cracked} : from instance {id_arch} .")
-        
-def hash_notfound(): # Mixer avec hash_terminate()
-    # Shutdown instance hash find
-    cursor.execute(f"SELECT id_arch FROM public.instances LEFT JOIN public.hashes ON public.hashes.fk_id_instance=public.instances.id_instance WHERE public.hashes.result IS NULL AND public.hashes.status = '{notfound}' AND public.instances.status != '{terminate}';")
-    results=cursor.fetchall()
-    if results:
-        for result in results:
-            id_arch =  result[0]
-            subprocess.run(f"./instance-status.sh {id_arch} '{terminate}'", shell=True, check=True)
-            subprocess.run(f"./terraform_stop_instance.sh {id_arch}", shell=True, check=True)
-            print(f"Instance {terminate} : {id_arch} hash not found .")
-
-
-def hash_processing():
-    # Shutdown instance hash find
-    cursor.execute(f"SELECT id_arch FROM public.instances LEFT JOIN public.hashes ON public.hashes.fk_id_instance=public.instances.id_instance WHERE public.hashes.result IS NULL AND public.instances.status = '{processing}' AND public.hashes.status != '{processing}' AND public.hashes.status != '{notfound}' ;")
-    results=cursor.fetchall()
-    if results:
-        for result in results:
-            id_arch =  result[0]
-            subprocess.run(f"./hash-status.sh {id_arch} '{processing}'", shell=True, check=True)
-            print(f"Hash {processing} : from instance {id_arch} .")
-
-
-# Boucle pour check les update de la bdd
-try:
-    while True:
-        launch_newinstance()
-        instance_terminate()
-        hash_cracked()
-        hash_notfound()
-        hash_processing()
-
-        time.sleep(1)
-except KeyboardInterrupt:
-    print("Listenner stopted.")
-finally:
+            print(f"Launch instance for id_hash: {id_hash}.")
     cursor.close()
     conn.close()
+
+def instance_terminate():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(f"SELECT id_arch FROM public.instances LEFT JOIN public.hashes ON public.hashes.fk_id_instance=public.instances.id_instance WHERE public.hashes.result IS NOT NULL AND public.instances.status != '{terminate}';")
+    results = cursor.fetchall()
+    if results:
+        for result in results:
+            id_arch = result[0]
+            subprocess.run(f"./instance-status.sh {id_arch} '{terminate}'", shell=True, check=True)
+            subprocess.run(f"./terraform_stop_instance.sh {id_arch}", shell=True, check=True)
+            print(f"Instance {terminate}: {id_arch}.")
+    cursor.close()
+    conn.close()
+
+def hash_cracked():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(f"SELECT id_arch FROM public.instances LEFT JOIN public.hashes ON public.hashes.fk_id_instance=public.instances.id_instance WHERE public.hashes.result IS NOT NULL AND public.hashes.status != '{cracked}';")
+    results = cursor.fetchall()
+    if results:
+        for result in results:
+            id_arch = result[0]
+            subprocess.run(f"./hash-status.sh {id_arch} '{cracked}'", shell=True, check=True)
+            print(f"Hash {cracked}: from instance {id_arch}.")
+    cursor.close()
+    conn.close()
+
+def hash_notfound():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(f"SELECT id_arch FROM public.instances LEFT JOIN public.hashes ON public.hashes.fk_id_instance=public.instances.id_instance WHERE public.hashes.result IS NULL AND public.hashes.status = '{notfound}' AND public.instances.status != '{terminate}';")
+    results = cursor.fetchall()
+    if results:
+        for result in results:
+            id_arch = result[0]
+            subprocess.run(f"./instance-status.sh {id_arch} '{terminate}'", shell=True, check=True)
+            subprocess.run(f"./terraform_stop_instance.sh {id_arch}", shell=True, check=True)
+            print(f"Instance {terminate}: {id_arch} hash not found.")
+    cursor.close()
+    conn.close()
+
+def hash_processing():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(f"SELECT id_arch FROM public.instances LEFT JOIN public.hashes ON public.hashes.fk_id_instance=public.instances.id_instance WHERE public.hashes.result IS NULL AND public.instances.status = '{processing}' AND public.hashes.status != '{processing}' AND public.hashes.status != '{notfound}';")
+    results = cursor.fetchall()
+    if results:
+        for result in results:
+            id_arch = result[0]
+            subprocess.run(f"./hash-status.sh {id_arch} '{processing}'", shell=True, check=True)
+            print(f"Hash {processing}: from instance {id_arch}.")
+    cursor.close()
+    conn.close()
+
+async def run_in_executor(func):
+    loop = asyncio.get_running_loop()
+    await loop.run_in_executor(None, func)
+
+# Fonction principale asynchrone
+async def main():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        while True:
+            # Créer des tâches asynchrones pour les tâches longues
+            asyncio.create_task(run_in_executor(launch_newinstance))
+            asyncio.create_task(run_in_executor(instance_terminate))
+            asyncio.create_task(run_in_executor(hash_notfound))
+            asyncio.create_task(run_in_executor(hash_cracked))
+            asyncio.create_task(run_in_executor(hash_processing))
+
+            # Pause asynchrone entre chaque incrémentation pour observer l'effet
+            await asyncio.sleep(1)
+    except KeyboardInterrupt:
+        print("Listener stopped.")
+    finally:
+        cursor.close()
+        conn.close()
+
+# Exécuter la boucle d'événements asyncio
+asyncio.run(main())
