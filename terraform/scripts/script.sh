@@ -64,7 +64,7 @@ rm $temp_wordlist_file
 
 
 # donne le fk_id_instance au hash
-id_instance=$(PGPASSWORD='C5yAn39f8Tm7U13z' psql -U userHash2ash -h db-hash2ash-prod.c3m2i44y2jm0.us-east-1.rds.amazonaws.com -p 5432 -d hash2ash -t -c "SELECT id_instance FROM public.instances WHERE id_arch = '$id_arch';" | tr -d '[:space:]')
+id_instance=$(PGPASSWORD='C5yAn39f8Tm7U13z' psql -U userHash2ash -h db-hash2ash-prod.c3m2i44y2jm0.us-east-1.rds.amazonaws.com -p 5432 -d hash2ash -t -c "SELECT id_instance FROM public.instances WHERE id_arch = '$id_arch';")
 PGPASSWORD='C5yAn39f8Tm7U13z' psql -U userHash2ash -h db-hash2ash-prod.c3m2i44y2jm0.us-east-1.rds.amazonaws.com -p 5432 -d hash2ash -c "UPDATE public.hashes SET fk_id_instance=$id_instance WHERE id_hash='$id_hash';"
 
 #hashcat -m 400 /tmp/hash.hash $final_wordlist_file --status -O
