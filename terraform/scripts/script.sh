@@ -24,18 +24,6 @@ path_result="/tmp/result-$id_arch.txt"
 # modifier le hashcat pour qu il prenne en entré : path_hash 
 # ==============================================================================
 
-# =========== Upload le url hash dans BDD ======================================
-## Upload local file to bucket S3
-##      aws s3 cp $path_result s3://hash2ash-wordlist/$path_result
-# 
-# Générer le lien de s3://hash2ash-wordlist/$path_result avec une commande aws
-# Upload le lien généré en BDD dans hashes.hash
-# 
-# 
-# ==============================================================================
-
-
-
 
 # =========== Generer wordlist final (defaut + custom) ======================================
 temp_wordlist_file="/tmp/wordlist_temp.txt"
@@ -46,7 +34,7 @@ id_instance=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p 
 echo "id_instance = $id_instance"
 
 # Exécuter la requête SQL pour récupérer les wordlists
-wordlists=$(PGPASSWORD=$DB_PASSWORD psql -U $DB_USERNAME -h $DB_HOST -p $DB_PORT -d $DB_NAME -t -c "SELECT wordlist FROM public.hashes WHERE fk_id_instance = '$id_instance';"| tr -d '[:space:]')
+wordlists=$(PGPASSWORD=$DB_PASSWORD psql -U $DB_USERNAME -h $DB_HOST -p $DB_PORT -d $DB_NAME -t -c "SELECT wordlist FROM public.hashes WHERE fk_id_instance = '$id_instance';")
 echo "wordlists = $wordlists"
 
 # Ajouter chaque wordlist locale au fichier temporaire
@@ -104,8 +92,11 @@ else
     while IFS=: read -r hash password
     do
         if [ -n "$hash" ] && [ -n "$password" ]; then
-            # Mettre à jour la base de données en une seule ligne
-            PGPASSWORD="$DB_PASSWORD" psql -U $DB_USERNAME -h $DB_HOST -p $DB_PORT -d $DB_NAME -c "UPDATE $TABLE_HASHES SET result='$password' WHERE id_hash=$id_hash;"
+            aws s3 cp $path_result s3://hash2ash-hash/$path_result
+            url_hash_cracked="https://hash2ash-hash.s3.amazonaws.com/$path_result"
+            #PGPASSWORD="$DB_PASSWORD" psql -U $DB_USERNAME -h $DB_HOST -p $DB_PORT -d $DB_NAME -c "UPDATE $TABLE_HASHES SET result='$password' WHERE id_hash=$id_hash;"
+            PGPASSWORD="$DB_PASSWORD" psql -U $DB_USERNAME -h $DB_HOST -p $DB_PORT -d $DB_NAME -c "UPDATE $TABLE_HASHES SET result='$url_hash_cracked' WHERE id_hash=$id_hash;"
+            
             fi
     done < $path_result
 
