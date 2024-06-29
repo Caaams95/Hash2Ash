@@ -1,0 +1,62 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<div class="content-section mb-4">
+    <legend class="border-bottom mb-4">{{ username }}'s Hashes History</legend>
+    <div class="accordion" id="accordionPanelsStayOpenExample">
+        {% if hashes %}
+            {% for hash in hashes %}
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapse{{hash.id_hash}}" aria-expanded="true" aria-controls="panelsStayOpen-collapseOne">
+                    <p>#{{loop.index}} {{hash.name}}<small class="text-muted mx-6"> {{hash.date_start.strftime("%d/%m/%Y %H:%M:%S")}}</small> </p>
+                </button>
+                </h2>
+                <div id="panelsStayOpen-collapse{{hash.id_hash}}" class="accordion-collapse collapse">
+                <div class="accordion-body">
+                    <p class="mb-2">ID: {{hash.id_hash}}</p>
+                    <p class="mb-2">Hash: {{hash.hash}}</p>
+                    <p class="mb-2">Algorithm: {{hash.mask}}</p>
+                    <p class="mb-2">Algorithm: {{hash.algorithm}}</p>
+                    <p class="mb-2">Power: {{hash.power}}</p>
+                    <p class="mb-2">Provider: {{hash.provider}}</p>
+                    <p class="mb-2"><strong>Result:</strong> {{hash.result}}</p>
+                    <p class="mb-2">Start Date: {{hash.date_start.strftime("%d/%m/%Y %H:%M:%S")}}</p>
+                    <p class="mb-2">End Date: {{ "None" if not hash.date_end else hash.date_end.strftime("%d/%m/%Y %H:%M:%S") }}</p>
+                    <p class="mb-2">Price: {{hash.price}}</p>
+                    
+                    <button class="btn btn-sm btn-outline-secondary" type="button" onclick="window.location.href='/'">
+                        Stop
+                    </button>
+                    <button class="btn btn-outline-danger btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#deleteModal-{{hash.id_hash}}" >
+                        Delete
+                    </button>
+                </div>
+                </div>
+            </div>
+            <!-- Modal Delete Hash-->
+            <div class="modal fade" id="deleteModal-{{hash.id_hash}}" tabindex="-1" aria-labelledby="deleteModal-{{hash.id_hash}}Label" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h1 class="modal-title fs-5" id="deleteModal-{{hash.id_hash}}Label">Are you sure you want to delete the hash ?</h1>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <form action="{{ url_for('delete_hash', id_hash=hash.id_hash) }}" method="post">
+                                <input class="btn btn-danger" type="submit" value="Delete">
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div>
+                <p>No hashes found.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
