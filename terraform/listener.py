@@ -38,7 +38,7 @@ def instance_terminate():
         for result in results:
             id_arch =  result[0]
             subprocess.run(f"./instance-status.sh {id_arch} '{terminate}'", shell=True, check=True)
-            subprocess.run(f"./instance-status.sh {id_arch} '{terminate}'", shell=True, check=True)
+            subprocess.run(f"./terraform_stop_instance.sh {id_arch}", shell=True, check=True)
 
             print(f"Instance {terminate} : {id_arch} .")
         
@@ -52,16 +52,16 @@ def hash_cracked():
             subprocess.run(f"./hash-status.sh {id_arch} '{cracked}'", shell=True, check=True)
             print(f"Hash {cracked} : from instance {id_arch} .")
         
-def hash_notfound():
+def hash_notfound(): # Mixer avec hash_terminate()
     # Shutdown instance hash find
-    cursor.execute(f"SELECT id_arch FROM public.instances LEFT JOIN public.hashes ON public.hashes.fk_id_instance=public.instances.id_instance WHERE public.hashes.result IS NULL AND public.instances.status = '{terminate}' AND public.hashes.status != '{notfound}';")
+    cursor.execute(f"SELECT id_arch FROM public.instances LEFT JOIN public.hashes ON public.hashes.fk_id_instance=public.instances.id_instance WHERE public.hashes.result IS NULL AND public.hashes.status = '{notfound}' AND public.instances.status != '{terminate}';")
     results=cursor.fetchall()
     if results:
         for result in results:
             id_arch =  result[0]
-            print(f"GO NOT FOUND : {id_arch}")
-            subprocess.run(f"./hash-status.sh {id_arch} '{notfound}'", shell=True, check=True)
-            print(f"Hash {notfound} : from instance {id_arch} .")
+            subprocess.run(f"./instance-status.sh {id_arch} '{terminate}'", shell=True, check=True)
+            subprocess.run(f"./terraform_stop_instance.sh {id_arch}", shell=True, check=True)
+            print(f"Instance {terminate} : {id_arch} hash not found .")
 
 
 def hash_processing():
