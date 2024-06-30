@@ -15,6 +15,15 @@ fi
 id_arch=$1
 id_hash=$2
 path_result="/tmp/result-$id_arch.txt"
+
+url_hash=$(PGPASSWORD=$DB_PASSWORD psql -U $DB_USERNAME -h $DB_HOST -p $DB_PORT -d $DB_NAME -t -c "SELECT custom_wordlist FROM public.hashes WHERE id_hash = $id_hash;" | xargs)
+
+# Télécharger le fichier de hash depuis S3
+if [ -n "$url_hash" ]; then
+    wget "$url_hash" -O $path_result
+else
+    echo "URL du hash introuvable dans la base de données."
+    exit 1
 # =========== Recuperer le Hash depuis S3 ======================================
 # Reda uploadera une url dans la table public.hashes.hash
 # TODO
