@@ -1,10 +1,5 @@
 #!/bin/bash
-DB_USERNAME="userHash2ash"
-DB_PASSWORD="C5yAn39f8Tm7U13z"
-DB_HOST="db-hash2ash-prod.c3m2i44y2jm0.us-east-1.rds.amazonaws.com"
-DB_PORT="5432"
-DB_NAME="hash2ash"
-
+export $(grep -v '^#' .env | xargs)
 
 if [ $# -ne 1 ]; then
     echo "Usage: $0 <id_hash>"
@@ -20,7 +15,7 @@ status_initialisation="Initialisation"
 status_processing="Processing"
 
 # Initialisation hashes.status
-PGPASSWORD='C5yAn39f8Tm7U13z' psql -U userHash2ash -h db-hash2ash-prod.c3m2i44y2jm0.us-east-1.rds.amazonaws.com -p 5432 -d hash2ash -c "UPDATE public.hashes SET status='$status_initialisation' WHERE id_hash='$id_hash';"
+PGPGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -c "UPDATE public.hashes SET status='$status_initialisation' WHERE id_hash='$id_hash';"
 
 # Initialiser Terraform
 terraform init

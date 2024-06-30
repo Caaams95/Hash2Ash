@@ -2,18 +2,20 @@ import asyncio
 import concurrent.futures
 import subprocess
 import psycopg2
+from dotenv import load_dotenv
+import os 
 
-# pip install psycopg2-binary -> required 
+load_dotenv()
 
 print("start listener.py")
 
 # Info pour l'auth de la bdd
 db_config = {
-    'user': 'userHash2ash',
-    'password': 'C5yAn39f8Tm7U13z',
-    'host': 'db-hash2ash-prod.c3m2i44y2jm0.us-east-1.rds.amazonaws.com',
-    'port': '5432',
-    'dbname': 'hash2ash'
+    'user': os.getenv('DB_USERNAME'),
+    'password': os.getenv('DB_PASSWORD'),
+    'host': os.getenv('DB_HOST'),
+    'port': os.getenv('DB_PORT'),
+    'dbname': os.getenv('DB_NAME')
 }
 
 # Constantes pour les états
