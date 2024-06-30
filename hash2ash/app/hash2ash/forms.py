@@ -103,10 +103,10 @@ class CrackStationForm(FlaskForm):
         'Wordlist',
         choices=[
             ('rockyou', 'rockyou'), 
-            ('top1000', 'top1000'), 
-            ('phpbb', 'phpbb'),
-            ('darkcode', 'darkcode'),
-            ('elitehacker', 'elitehacker')
+            ('common-passwords-win', 'common-passwords-win'), 
+            ('10k-most-common', '10k-most-common'),
+            ('active-directory-wordlists', 'active-directory-wordlists'),
+            ('richelieu-top1000', 'richelieu-top1000')
         ],
         validators=[Optional()]  # Use Optional because actual requirement is checked in a custom validator
     )
