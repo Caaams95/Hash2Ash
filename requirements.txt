@@ -11,3 +11,4 @@ psycopg2
 boto3
 awscli
 terraform
+psycopg2-binary
