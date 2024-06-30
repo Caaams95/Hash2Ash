@@ -520,8 +520,7 @@ HASHCAT_ALGORITHMS = [
     ('31100', 'SM3 * '),
     ('31200', 'Veeam VBK * '),
     ('31300', 'MS SNTP * '),
-    (99999	Plaintext )
-)
+    ('99999',	'Plaintext *' )
 ]
 class MultiCheckboxField(SelectMultipleField):
     widget = widgets.ListWidget(prefix_label=False)
