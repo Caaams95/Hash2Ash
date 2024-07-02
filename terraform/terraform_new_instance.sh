@@ -1,10 +1,5 @@
 #!/bin/bash
-DB_USERNAME="userHash2ash"
-DB_PASSWORD="C5yAn39f8Tm7U13z"
-DB_HOST="db-hash2ash-prod.c3m2i44y2jm0.us-east-1.rds.amazonaws.com"
-DB_PORT="5432"
-DB_NAME="hash2ash"
-
+source ../.env
 
 if [ $# -ne 1 ]; then
     echo "Usage: $0 <id_hash>"
@@ -15,13 +10,22 @@ id_hash=$1
 echo id_hash = $id_hash
 
 
-
 status_initialisation="Initialisation"
 status_processing="Processing"
 
-# Initialisation hashes.status
-PGPASSWORD='C5yAn39f8Tm7U13z' psql -U userHash2ash -h db-hash2ash-prod.c3m2i44y2jm0.us-east-1.rds.amazonaws.com -p 5432 -d hash2ash -c "UPDATE public.hashes SET status='$status_initialisation' WHERE id_hash='$id_hash';"
+# Terraform en cours ? j'attends
+need_to_wait_terraform=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -t -c "SELECT COUNT(*) FROM public.hashes WHERE status = '$status_initialisation';" | tr -d '[:space:]')
+# Vérifier si need_to_wait_terraform est supérieur à 0
+if [ "$need_to_wait_terraform" -gt 0 ]; then
+  echo "terraform est déjà entrain de créer une instance, attente de 60 secondes..."
+  sleep 60
+fi
 
+
+
+
+# Initialisation hashes.status
+PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -c "UPDATE public.hashes SET status='$status_initialisation' WHERE id_hash='$id_hash';"
 # Initialiser Terraform
 terraform init
 
@@ -44,19 +48,23 @@ instance_name=$(echo "$latest_instance" | jq -r '.name')
 id_arch=$(echo "$latest_instance" | jq -r '.instance_id')
 
 # Insérer l'ID de la nouvelle instance dans la base de données (exemple avec PostgreSQL)
-is_processed=$(PGPASSWORD='C5yAn39f8Tm7U13z' psql -U userHash2ash -h db-hash2ash-prod.c3m2i44y2jm0.us-east-1.rds.amazonaws.com -p 5432 -d hash2ash -t -c "SELECT COUNT(*) FROM public.instances WHERE id_arch = '$id_arch';" | tr -d '[:space:]')
+is_processed=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -t -c "SELECT COUNT(*) FROM public.instances WHERE id_arch = '$id_arch';" | tr -d '[:space:]')
 
 if [ "$is_processed" -le 0 ]; then
     # Ajouter l'instance dans la base de données
-    PGPASSWORD='C5yAn39f8Tm7U13z' psql -U userHash2ash -h db-hash2ash-prod.c3m2i44y2jm0.us-east-1.rds.amazonaws.com -p 5432 -d hash2ash -c "INSERT INTO public.instances (type_instance, id_arch, price_provider, price_hash2ash, status) VALUES ('t2.large', '$id_arch', 2, 4, '$status_processing');"
+    PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -c "INSERT INTO public.instances (type_instance, id_arch, price_provider, price_hash2ash, status) VALUES ('t2.large', '$id_arch', 2, 4, '$status_processing');"
 
     # Exécuter des commandes sur l'instance créée (exemple avec SSH)
     ssh -o "StrictHostKeyChecking=no" -i /home/cams/.ssh/Cle_test_terraform.pem ubuntu@"$instance_ip" \
         "sudo apt-get update -y && sudo apt-get upgrade -y && \
+        sudo snap install aws-cli --classic && \
+        aws configure set aws_access_key_id $AWS_ACCESS_KEY_CAMILLE && \
+        aws configure set aws_secret_access_key $AWS_SECRET_KEY_CAMILLE && \
+        aws configure set default.region $REGION && \
         sudo apt install postgresql -y && \
         sudo apt-get install hashcat -y && \
         chmod +x /tmp/script.sh && \
-        /tmp/script.sh $id_arch $id_hash"
+        /tmp/script.sh $id_arch $id_hash "
 fi
 
 # Afficher le succès de la création de l'instance
