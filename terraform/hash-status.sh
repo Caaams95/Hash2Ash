@@ -1,7 +1,7 @@
 #!/bin/bash
 source ../.env
 if [ $# -ne 2 ]; then
-    echo "Usage: $0 <id_instance>"
+    echo "Usage: $0 <id_arch> <status>"
     exit 1
 fi
 
