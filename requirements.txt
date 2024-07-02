@@ -9,6 +9,4 @@ itsdangerous==2.0.1
 python-dotenv
 psycopg2
 boto3
-awscli
-terraform
 psycopg2-binary
