@@ -1,3 +1,9 @@
+### Créer un environnement python
+```bash
+virtualenv -p python3 venv
+source venv/bin/activate.fish
+```
+
 ### Dépendances necessaires pour lancer le serveur
 
 ```bash
