@@ -2,6 +2,7 @@ import asyncio
 import concurrent.futures
 import subprocess
 import psycopg2
+import time
 
 # pip install psycopg2-binary -> required 
 
@@ -31,11 +32,15 @@ def launch_newinstance():
     cursor = conn.cursor()
     cursor.execute(f"SELECT id_hash FROM public.hashes WHERE status='{inqueue}';")
     results = cursor.fetchall()
+    #print(f"results {results}")
     if results:
         for result in results:
             id_hash = result[0]
+            # Terraform en cours ? j'attends
+            print(f"id_hash: {id_hash} In Queue detected .")
             subprocess.run(f"./terraform_new_instance.sh {id_hash}", shell=True, check=True)
             print(f"Launch instance for id_hash: {id_hash}.")
+            time.sleep(60)
     cursor.close()
     conn.close()
 
@@ -111,7 +116,7 @@ async def main():
             asyncio.create_task(run_in_executor(hash_processing))
 
             # Pause asynchrone entre chaque incrémentation pour observer l'effet
-            await asyncio.sleep(1)
+            await asyncio.sleep(2)
     except KeyboardInterrupt:
         print("Listener stopped.")
     finally:
@@ -120,3 +125,6 @@ async def main():
 
 # Exécuter la boucle d'événements asyncio
 asyncio.run(main())
+
+
+
