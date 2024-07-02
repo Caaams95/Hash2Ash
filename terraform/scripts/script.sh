@@ -63,7 +63,7 @@ IFS=',' read -r -a wordlists <<< "$clean_wordlists"
 for wordlist in "${wordlists[@]}"; do
     echo Téléchagement de $wordlist en cours...
     wget "https://hash2ash-wordlist.s3.amazonaws.com/$wordlist.txt" -O /tmp/$wordlist.txt
-    head -n 300 /tmp/$wordlist.txt >> $temp_wordlist_file # enelever le head et mettre cat 
+    cat /tmp/$wordlist.txt >> $temp_wordlist_file # enelever le head et mettre cat 
 done
 
 # Mettre la wordlist custom choisis dans la wordlist final
