@@ -38,4 +38,4 @@ app.config['AWS_REGION_NAME'] = os.getenv("AWS_REGION_NAME")
 
 s3 = boto3.client('s3', aws_access_key_id=app.config['AWS_ACCESS_KEY'], aws_secret_access_key=app.config['AWS_SECRET_KEY'], region_name=app.config['AWS_REGION_NAME'])
 
-from hash2ash import routes
+from src import routes
