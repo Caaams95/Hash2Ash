@@ -1,7 +1,7 @@
 from flask import render_template, url_for, flash, redirect, request, abort
-from hash2ash import app, db, bcrypt, mail, s3
-from hash2ash.models import Users, Instances, Hashes
-from hash2ash.forms import RegistrationForm, LoginForm, CrackStationForm, UpdateAccountForm, AdminUpdateAccountForm, RequestResetForm, ResetPasswordForm   # Importation des classes RegistrationForm et LoginForm depuis forms.py
+from src import app, db, bcrypt, mail, s3
+from src.models import Users, Instances, Hashes
+from src.forms import RegistrationForm, LoginForm, CrackStationForm, UpdateAccountForm, AdminUpdateAccountForm, RequestResetForm, ResetPasswordForm   # Importation des classes RegistrationForm et LoginForm depuis forms.py
 from flask_login import login_user, current_user, logout_user, login_required
 from flask_mail import Message
 import smtplib
