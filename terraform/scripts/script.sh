@@ -1,16 +1,10 @@
 #!/bin/bash
+source /tmp/.env_script
 
 if [ $# -ne 2 ]; then
     echo "Usage: $0 <id_arch> <id_hash>"
     exit 1
 fi
-
-DB_USERNAME="userHash2ash"
-DB_PASSWORD="C5yAn39f8Tm7U13z"
-DB_HOST="db-hash2ash-prod.c3m2i44y2jm0.us-east-1.rds.amazonaws.com"
-DB_PORT="5432"
-DB_NAME="hash2ash"
-TABLE_HASHES="public.hashes"
 
 id_arch=$1
 id_hash=$2
