@@ -2,7 +2,7 @@ from flask_wtf import FlaskForm
 from flask_login import current_user
 from wtforms import StringField , PasswordField, SubmitField, BooleanField, SelectField, FileField, SelectMultipleField, widgets, BooleanField
 from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError, Optional
-from hash2ash.models import Users, Instances, Hashes
+from src.models import Users, Instances, Hashes
 from flask_wtf.file import FileAllowed, FileRequired
 
 HASHCAT_ALGORITHMS = [
@@ -447,7 +447,7 @@ HASHCAT_ALGORITHMS = [
     ('28700', 'Amazon AWS4-HMAC-SHA256 '),
     ('28800', 'Kerberos 5, etype 17, DB '),
     ('28900', 'Kerberos 5, etype 18, DB '),
-    ('29000', 'sha1($salt.sha1(utf16le($username).':'.utf16le($pass))) '),
+    ('29000', 'sha1($salt.sha1(utf16le($username).:.utf16le($pass))) '),
     ('29100', 'Flask Session Cookie ($salt.$salt.$pass) '),
     ('29200', 'Radmin3 '),
     ('29311', 'TrueCrypt RIPEMD160 + XTS 512 bit '),

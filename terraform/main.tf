@@ -8,6 +8,7 @@ terraform {
 }
 
 provider "aws" {
+  profile = "terraform-user"
   region = "us-east-1"
 }
 
@@ -59,6 +60,11 @@ resource "aws_instance" "instance_gratuite" {
   provisioner "file" {
     source      = "./scripts/script.sh"
     destination = "/tmp/script.sh"
+  }
+
+    provisioner "file" {
+    source      = "./scripts/.env_script"
+    destination = "/tmp/.env_script"
   }
 
   provisioner "file" {

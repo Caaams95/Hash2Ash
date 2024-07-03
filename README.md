@@ -1,13 +1,26 @@
-### Dépendances necessaires
+### Créer un environnement python
+```bash
+virtualenv -p python3 venv
+source venv/bin/activate.fish
+```
+
+### Dépendances necessaires pour lancer le serveur
 
 ```bash
 cd hash2ash
 pip install -r requirements.txt
+apt install aws-cli terraform -y
 ```
 ### Lancer le serveur web
 ```bash
 cd hash2ash/app/
 python3 run.py
+```
+### Lancer le listenner de BDD
+Dans un 2e terminal:
+```bash
+cd terraform/
+python3 listenner.py
 ```
 ### Compte Admin
 ```

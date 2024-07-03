@@ -245,3 +245,9 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
+
+# Terraform 
+*backup
+.terraform/
+*.hcl
+.env_script
