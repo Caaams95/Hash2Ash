@@ -1,6 +1,6 @@
 from datetime import datetime
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer # Importation de la classe Serializer pour générer des tokens
-from hash2ash import db, login_manager, app # Importation de l'instance de la base de données et de l'instance de login_manager
+from src import db, login_manager, app # Importation de l'instance de la base de données et de l'instance de login_manager
 from flask_login import UserMixin   # Importation de la classe UserMixin qui contient les méthodes de base pour gérer les utilisateurs
 
 @login_manager.user_loader # Fonction pour charger un utilisateur 
