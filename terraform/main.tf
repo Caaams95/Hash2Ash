@@ -62,6 +62,11 @@ resource "aws_instance" "instance_gratuite" {
     destination = "/tmp/script.sh"
   }
 
+    provisioner "file" {
+    source      = "./scripts/.env_script"
+    destination = "/tmp/.env_script"
+  }
+
   provisioner "file" {
     source      = "./scripts/lib/example.dict"
     destination = "/tmp/example.dict"
