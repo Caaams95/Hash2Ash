@@ -7,6 +7,16 @@ from dotenv import load_dotenv
 import os
 
 
+def rouge(text):
+    return f"\033[31m{text}\033[0m"
+
+def jaune(text):
+    return f"\033[33m{text}\033[0m"
+
+def vert(text):
+    return f"\033[32m{text}\033[0m"
+
+
 load_dotenv()
 
 # pip install psycopg2-binary -> required 
@@ -28,6 +38,7 @@ cracked     = "Cracked"
 notfound    = "NotFound"
 processing  = "Processing"
 inqueue     = "In Queue"
+initialisation =  "Initialisation"
 
 def get_db_connection():
     return psycopg2.connect(**db_config)
@@ -35,17 +46,29 @@ def get_db_connection():
 def launch_newinstance():
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute(f"SELECT id_hash FROM public.hashes WHERE status='{inqueue}';")
-    results = cursor.fetchall()
-    #print(f"results {results}")
-    if results:
-        for result in results:
+
+    # Vérifier s'il y a des statuts 'Initialisation'
+    cursor.execute(f"SELECT COUNT(*) FROM public.hashes WHERE status = '{initialisation}';")
+    init_count = cursor.fetchone()[0]
+
+    if init_count == 0:
+        # Sélectionner le plus petit id_hash avec le statut 'inqueue'
+        cursor.execute(f"SELECT id_hash FROM public.hashes WHERE status='{inqueue}' ORDER BY id_hash ASC LIMIT 1;")
+        result = cursor.fetchone()
+        
+        if result:
             id_hash = result[0]
             # Terraform en cours ? j'attends
-            print(f"id_hash: {id_hash} In Queue detected .")
+            print(f"{vert("[ANALYSE BDD]")} id_hash {id_hash} détecté.")
             subprocess.run(f"./terraform_new_instance.sh {id_hash}", shell=True, check=True)
-            print(f"Launch instance for id_hash: {id_hash}.")
-            time.sleep(60)
+            print(f"{vert("[ACTION]")} Création d'instance pour id_hash : {id_hash}.")
+        else:
+            print(f"{rouge("[ANALYSE BDD]")} Aucun id_hash en attente.")
+    else:
+        print(f"{vert("[ANALYSE BDD]")} Impossible de lancer de nouvelle instance, {init_count} Initialisation d'instance est déjà en cours.")
+        print(f"{vert("[ANALYSE BDD]")} Veuillez patienter...")
+        #print(f"[*] id hash {id_hash} en attente")
+
     cursor.close()
     conn.close()
 
@@ -59,7 +82,7 @@ def instance_terminate():
             id_arch = result[0]
             subprocess.run(f"./instance-status.sh {id_arch} '{terminate}'", shell=True, check=True)
             subprocess.run(f"./terraform_stop_instance.sh {id_arch}", shell=True, check=True)
-            print(f"Instance {terminate}: {id_arch}.")
+            print(f"{vert("[STATUS]")} Instance {id_arch} : {terminate}.")
     cursor.close()
     conn.close()
 
@@ -72,7 +95,7 @@ def hash_cracked():
         for result in results:
             id_arch = result[0]
             subprocess.run(f"./hash-status.sh {id_arch} '{cracked}'", shell=True, check=True)
-            print(f"Hash {cracked}: from instance {id_arch}.")
+            print(f"{vert("[STATUS]")} Instance {id_arch} : Hash {cracked}.")
     cursor.close()
     conn.close()
 
@@ -86,7 +109,8 @@ def hash_notfound():
             id_arch = result[0]
             subprocess.run(f"./instance-status.sh {id_arch} '{terminate}'", shell=True, check=True)
             subprocess.run(f"./terraform_stop_instance.sh {id_arch}", shell=True, check=True)
-            print(f"Instance {terminate}: {id_arch} hash not found.")
+            print(f"{vert("[STATUS]")} Instance {id_arch} : Hash non trouvé.")
+            print(f"{vert("[ACTION]")} Instance {id_arch} : {terminate}.")
     cursor.close()
     conn.close()
 
@@ -99,7 +123,7 @@ def hash_processing():
         for result in results:
             id_arch = result[0]
             subprocess.run(f"./hash-status.sh {id_arch} '{processing}'", shell=True, check=True)
-            print(f"Hash {processing}: from instance {id_arch}.")
+            print(f"{vert("[STATUS]")} Instance {id_arch} : Hash {processing}.")
     cursor.close()
     conn.close()
 
@@ -121,7 +145,7 @@ async def main():
             asyncio.create_task(run_in_executor(hash_processing))
 
             # Pause asynchrone entre chaque incrémentation pour observer l'effet
-            await asyncio.sleep(2)
+            await asyncio.sleep(5)
     except KeyboardInterrupt:
         print("Listener stopped.")
     finally:
