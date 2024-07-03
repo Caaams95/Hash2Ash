@@ -19,7 +19,8 @@ final_wordlist_file="/tmp/wordlist.txt"
 custom_worldist_file="/tmp/custom_worldist_file.txt"
 
 
-
+echo "[VARIABLE INFO] id_arch = $id_arch"
+echo "[VARIABLE INFO] id_hash = $id_hash"
 # Récuperation de id_instance selon le id_arch 
 id_instance=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -t -c "SELECT id_instance FROM public.instances WHERE id_arch='$id_arch';")
 echo "[HASHCAT INFO] id_instance = $id_instance"
