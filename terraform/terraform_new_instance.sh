@@ -26,13 +26,14 @@ echo power : $power
 terraform init
 
 # Récupérer le nombre actuel d'instances actives dans l'état Terraform
-current_count_t2_large=$(terraform state list | grep 'aws_instance.instance_gratuite' | wc -l)
+current_count_t2_large=$(terraform state list | grep 'aws_instance.instance_t2_large' | wc -l)
 current_count_c5_xlarge=$(terraform state list | grep 'aws_instance.instance_c5_xlarge' | wc -l)
+current_count_c7a_12xlarge=$(terraform state list | grep 'aws_instance.instance_c7a_12xlarge' | wc -l)
 
-if [ "$power" == "Small" ]; then
+if [ "$power" == "Low" ]; then
     type_instance="t2.large"
     new_count=$((current_count_t2_large + 1))
-    terraform apply -refresh=false -auto-approve -var="total_instance_count_t2_large=$new_count" -var="total_instance_count_c5_xlarge=$current_count_c5_xlarge"
+    terraform apply -refresh=false -auto-approve -var="total_instance_count_t2_large=$new_count" -var="total_instance_count_c5_xlarge=$current_count_c5_xlarge" -var="total_instance_count_c7a_12xlarge=$current_count_c7a_12xlarge"
     # Récupérer les détails des instances créées
     instances_details=$(terraform output -json instances_details_t2_large)
 
@@ -47,7 +48,7 @@ if [ "$power" == "Small" ]; then
 elif [ "$power" == "Medium" ]; then
     type_instance="c5.xlarge"
     new_count=$((current_count_c5_xlarge + 1))
-    terraform apply -refresh=false -auto-approve -var="total_instance_count_t2_large=$current_count_t2_large" -var="total_instance_count_c5_xlarge=$new_count"
+    terraform apply -refresh=false -auto-approve -var="total_instance_count_t2_large=$current_count_t2_large" -var="total_instance_count_c5_xlarge=$new_count" -var="total_instance_count_c7a_12xlarge=$current_count_c7a_12xlarge"
     # Récupérer les détails des instances créées
     instances_details=$(terraform output -json instances_details_c5_xlarge)
 
@@ -59,24 +60,34 @@ elif [ "$power" == "Medium" ]; then
     instance_name=$(echo "$latest_instance" | jq -r '.name')
     id_arch=$(echo "$latest_instance" | jq -r '.instance_id')
 
+elif [ "$power" == "High" ]; then
+    type_instance="c7a.12xlarge"
+    new_count=$((current_count_c7a_12xlarge + 1))
+    terraform apply -refresh=false -auto-approve -var="total_instance_count_t2_large=$current_count_t2_large" -var="total_instance_count_c5_xlarge=$current_count_c5_xlarge" -var="total_instance_count_c7a_12xlarge=$new_count"
+    # Récupérer les détails des instances créées
+    instances_details=$(terraform output -json instances_details_c7a_12xlarge)
+
+    # Trouver les détails de la dernière instance créée
+    latest_instance=$(echo "$instances_details" | jq -c ".[-1]")
+
+    # Récupérer l'adresse IP publique et le nom de la nouvelle instance
+    instance_ip=$(echo "$latest_instance" | jq -r '.public_ip')
+    instance_name=$(echo "$latest_instance" | jq -r '.name')
+    id_arch=$(echo "$latest_instance" | jq -r '.instance_id')
 
 else
     echo "Power level not recognized"
     exit 1
 fi
 
-echo =======================================
-echo =======================================
-echo =======================================
+
 echo =======================================
 echo id_hash = $id_hash
 echo instance_ip = $instance_ip
 echo instance_name = $instance_name
 echo id_arch = $id_arch
 echo =======================================
-echo =======================================
-echo =======================================
-echo =======================================
+
 
 # Insérer l'ID de la nouvelle instance dans la base de données (exemple avec PostgreSQL)
 is_processed=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -t -c "SELECT COUNT(*) FROM public.instances WHERE id_arch = '$id_arch';" | tr -d '[:space:]')
