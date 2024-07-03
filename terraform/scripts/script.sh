@@ -83,21 +83,25 @@ rm $temp_wordlist_file
 # Lancer Hashcat
 echo "hashcat -m $algorithm $path_hash $final_wordlist_file --status -O"
 hashcat -m $algorithm $path_hash $final_wordlist_file --status -O
+hashcat -m $algorithm $path_hash $final_wordlist_file --show
+hashcat -m $algorithm $path_hash $final_wordlist_file --show > $path_result
 
 # Envoyer le result en BDD
 ## Vérifie le code de sortie de hashcat
-HASHCAT_EXIT_CODE=$?
+# HASHCAT_EXIT_CODE=$?
+line_count=$(wc -l < path_result)
+
+
+
     # 0 = Cracked
     # 1 = Not found
-if [ $HASHCAT_EXIT_CODE -ne 0 ]; then
+if [ $line_count -eq 0 ]; then
     # password pas trouvé
     echo "Password Exhausted"
     PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -c "UPDATE $TABLE_HASHES SET status='NotFound' WHERE id_hash=$id_hash ;"
 else
     # password trouvé
     echo "Password Cracked"
-    hashcat -m $algorithm $path_hash $final_wordlist_file --show
-    hashcat -m $algorithm $path_hash $final_wordlist_file --show > $path_result
 
     # Envoyer le password en BDD
     # Lire le fichier de sortie de Hashcat
