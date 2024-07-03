@@ -60,13 +60,13 @@ def launch_newinstance():
             id_hash = result[0]
             # Terraform en cours ? j'attends
             print(f"{vert("[ANALYSE BDD]")} id_hash {id_hash} détecté.")
-            subprocess.run(f"./terraform_new_instance.sh {id_hash}", shell=True, check=True)
             print(f"{vert("[ACTION]")} Création d'instance pour id_hash : {id_hash}.")
+            subprocess.run(f"./terraform_new_instance.sh {id_hash}", shell=True, check=True)
         else:
             print(f"{rouge("[ANALYSE BDD]")} Aucun id_hash en attente.")
     else:
-        print(f"{vert("[ANALYSE BDD]")} Impossible de lancer de nouvelle instance, {init_count} Initialisation d'instance est déjà en cours.")
-        print(f"{vert("[ANALYSE BDD]")} Veuillez patienter...")
+        print(f"{jaune("[ANALYSE BDD]")} Impossible de lancer de nouvelle instance, {init_count} Initialisation d'instance est déjà en cours.")
+        print(f"{jaune("[ANALYSE BDD]")} Veuillez patienter...")
         #print(f"[*] id hash {id_hash} en attente")
 
     cursor.close()
