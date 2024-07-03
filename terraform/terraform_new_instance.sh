@@ -13,19 +13,11 @@ echo id_hash = $id_hash
 status_initialisation="Initialisation"
 status_processing="Processing"
 
-# Terraform en cours ? j'attends
-need_to_wait_terraform=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -t -c "SELECT COUNT(*) FROM public.hashes WHERE status = '$status_initialisation';" | tr -d '[:space:]')
-# Vérifier si need_to_wait_terraform est supérieur à 0
-if [ "$need_to_wait_terraform" -gt 0 ]; then
-  echo "terraform est déjà entrain de créer une instance, attente de 60 secondes..."
-  sleep 60
-fi
 
-
-
-
-# Initialisation hashes.status
+# hashes.status = Initialisation
 PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -c "UPDATE public.hashes SET status='$status_initialisation' WHERE id_hash='$id_hash';"
+
+
 # Initialiser Terraform
 terraform init
 
@@ -53,6 +45,10 @@ is_processed=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p
 if [ "$is_processed" -le 0 ]; then
     # Ajouter l'instance dans la base de données
     PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -c "INSERT INTO public.instances (type_instance, id_arch, price_provider, price_hash2ash, status) VALUES ('t2.large', '$id_arch', 2, 4, '$status_processing');"
+
+    # hashes.status = Processing
+    PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -c "UPDATE public.hashes SET status = '$status_processing' WHERE id_hash = $id_hash;"
+
 
     # Exécuter des commandes sur l'instance créée (exemple avec SSH)
     ssh -o "StrictHostKeyChecking=no" -i /home/cams/.ssh/Cle_test_terraform.pem ubuntu@"$instance_ip" \
