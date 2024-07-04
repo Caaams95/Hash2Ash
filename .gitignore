@@ -250,4 +250,4 @@ $RECYCLE.BIN/
 *backup
 .terraform/
 *.hcl
-.env_script
+terraform/scripts/.env_script
