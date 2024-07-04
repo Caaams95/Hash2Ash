@@ -73,6 +73,10 @@
         {% endif %}
     </div>
     <div class="col-md-12">
+        {{ form.algorithm_autodetect(class="form-check-input") }}
+        {{ form.algorithm_autodetect.label(class="form-check-label") }}
+    </div>
+    <div class="col-md-12">
         {{ form.provider.label(class="form-control-label") }}
         {{ form.provider(class="form-control form-control-lg") }}
         {% if form.provider.errors %}
@@ -115,70 +119,46 @@
 
 <script>
     $(document).ready(function() {
-        // Initial check and setup based on the checkbox state at page load
+        // Vérification initiale et configuration en fonction de l'état de la case à cocher lors du chargement de la page
         toggleCustomWordlist($('#crackstation-form input[type="checkbox"][name="use_custom_wordlist"]').is(':checked'));
 
-        // Event handler for checkbox changes to toggle the custom wordlist input field
+        // Gestionnaire d'événements pour les modifications de la case à cocher afin de basculer le champ de saisie de la wordlist personnalisée
         $('#crackstation-form input[type="checkbox"][name="use_custom_wordlist"]').change(function() {
             toggleCustomWordlist($(this).is(':checked'));
         });
 
         function toggleCustomWordlist(enable) {
             var customWordlistInput = $('#crackstation-form input[type="file"][name="custom_wordlist"]');
-            if (enable) {
-                customWordlistInput.prop('disabled', false);
-                customWordlistInput.prop('required', true);
-                customWordlistInput.parent().removeClass('disabled');
-            } else {
-                customWordlistInput.prop('disabled', true);
-                customWordlistInput.prop('required', false);
-                customWordlistInput.parent().addClass('disabled');
-            }
+            customWordlistInput.prop('disabled', !enable);
+            customWordlistInput.prop('required', enable);
+            customWordlistInput.parent().toggleClass('disabled', !enable);
         }
 
-        // Existing logic for file type and size validation
+        // Logique existante pour la validation du type et de la taille du fichier
         $('#crackstation-form input[type="file"]').on('change', function() {
-            var fileInput = $(this)[0];
-            var file = fileInput.files[0];
-            var errorMessage = '';
-
-            if (file) {
-                var fileType = file.name.split('.').pop().toLowerCase();
-                if (fileType !== 'txt') {
-                    errorMessage = 'TXT files only!';
-                } else if (file.size > 200 * 1024 * 1024) { // 200MB
-                    errorMessage = 'File size must be less than 200 MB';
-                }
-            } else {
-                errorMessage = 'This field is required';
-            }
-
-            var hashField = $(fileInput);
-            var hashError = $('#hash-error');
-
-            if (errorMessage) {
-                hashField.addClass('is-invalid');
-                hashError.text(errorMessage).show();
-            } else {
-                hashField.removeClass('is-invalid');
-                hashError.text('').hide();
-            }
+            validateFile($(this)[0]);
         });
 
         $('#crackstation-form').on('submit', function(event) {
             var fileInput = $('#crackstation-form input[type="file"]')[0];
+            if (!validateFile(fileInput) || !validateWordlistSelection()) {
+                event.preventDefault();
+            }
+        });
+
+        function validateFile(fileInput) {
             var file = fileInput.files[0];
             var errorMessage = '';
 
             if (file) {
                 var fileType = file.name.split('.').pop().toLowerCase();
                 if (fileType !== 'txt') {
-                    errorMessage = 'TXT files only!';
+                    errorMessage = 'Seuls les fichiers TXT sont autorisés !';
                 } else if (file.size > 200 * 1024 * 1024) { // 200MB
-                    errorMessage = 'File size must be less than 200 MB';
+                    errorMessage = 'La taille du fichier doit être inférieure à 200 Mo';
                 }
             } else {
-                errorMessage = 'This field is required';
+                errorMessage = 'Ce champ est obligatoire';
             }
 
             var hashField = $(fileInput);
@@ -187,12 +167,13 @@
             if (errorMessage) {
                 hashField.addClass('is-invalid');
                 hashError.text(errorMessage).show();
-                event.preventDefault();
+                return false;
             } else {
                 hashField.removeClass('is-invalid');
                 hashError.text('').hide();
+                return true;
             }
-        });
+        }
 
         function validateWordlistSelection() {
             var selectedWordlists = $('#crackstation-form input[type="checkbox"][name="wordlist"]:checked').length;
@@ -206,36 +187,8 @@
             }
             return true;
         }
-
-        $('#crackstation-form').on('submit', function(event) {
-            // Empêcher la soumission si la validation échoue
-            if (!validateWordlistSelection()) {
-                event.preventDefault();
-            }
-        });
-
-        // Gestion de l'activation/désactivation du champ custom wordlist
-        function toggleCustomWordlist(enable) {
-            var customWordlistInput = $('#crackstation-form input[type="file"][name="custom_wordlist"]');
-            if (enable) {
-                customWordlistInput.prop('disabled', false);
-                customWordlistInput.prop('required', true);
-                customWordlistInput.parent().removeClass('disabled');
-            } else {
-                customWordlistInput.prop('disabled', true);
-                customWordlistInput.prop('required', false);
-                customWordlistInput.parent().addClass('disabled');
-            }
-        }
-
-        // Initialiser l'état du formulaire basé sur l'état de la checkbox 'Use Custom Wordlist'
-        toggleCustomWordlist($('#crackstation-form input[type="checkbox"][name="use_custom_wordlist"]').is(':checked'));
-
-        // Événement pour la checkbox 'Use Custom Wordlist'
-        $('#crackstation-form input[type="checkbox"][name="use_custom_wordlist"]').change(function() {
-            toggleCustomWordlist($(this).is(':checked'));
-        });
     });
 </script>
+
 
 {% endblock %}
