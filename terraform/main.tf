@@ -71,8 +71,16 @@ resource "aws_instance" "instance_t2_large" {
     aws_security_group.allow_all.id
   ]
   provisioner "file" {
+    source      = "./scripts/ssh_commande_start.sh"
+    destination = "/tmp/ssh_commande_start.sh"
+  }
+  provisioner "file" {
     source      = "./scripts/script.sh"
     destination = "/tmp/script.sh"
+  }
+  provisioner "file" {
+    source      = "./scripts/get_progress.sh"
+    destination = "/tmp/get_progress.sh"
   }
 
     provisioner "file" {
@@ -103,10 +111,17 @@ resource "aws_instance" "instance_c5_xlarge" {
     aws_security_group.allow_all.id
   ]
   provisioner "file" {
+    source      = "./scripts/ssh_commande_start.sh"
+    destination = "/tmp/ssh_commande_start.sh"
+  }
+  provisioner "file" {
     source      = "./scripts/script.sh"
     destination = "/tmp/script.sh"
   }
-
+  provisioner "file" {
+    source      = "./scripts/get_progress.sh"
+    destination = "/tmp/get_progress.sh"
+  }
     provisioner "file" {
     source      = "./scripts/.env_script"
     destination = "/tmp/.env_script"
@@ -136,8 +151,16 @@ resource "aws_instance" "instance_c7a_12xlarge" {
     aws_security_group.allow_all.id
   ]
   provisioner "file" {
+    source      = "./scripts/ssh_commande_start.sh"
+    destination = "/tmp/ssh_commande_start.sh"
+  }
+    provisioner "file" {
     source      = "./scripts/script.sh"
     destination = "/tmp/script.sh"
+  }
+    provisioner "file" {
+    source      = "./scripts/get_progress.sh"
+    destination = "/tmp/get_progress.sh"
   }
 
     provisioner "file" {

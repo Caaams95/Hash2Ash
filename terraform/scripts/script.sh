@@ -18,11 +18,10 @@ temp_wordlist_file="/tmp/wordlist_temp.txt"
 final_wordlist_file="/tmp/wordlist.txt"
 custom_worldist_file="/tmp/custom_worldist_file.txt"
 
-
 echo "[VARIABLE INFO] id_arch = $id_arch"
 echo "[VARIABLE INFO] id_hash = $id_hash"
 # Récuperation de id_instance selon le id_arch 
-id_instance=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -t -c "SELECT id_instance FROM public.instances WHERE id_arch='$id_arch';")
+id_instance=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -t -c "SELECT id_instance FROM public.instances WHERE id_arch='$id_arch';" | xargs)
 echo "[HASHCAT INFO] id_instance = $id_instance"
 # Mise à jour de la BDD : fk_id_instance = id_instance
 PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -c "UPDATE public.hashes SET fk_id_instance=$id_instance WHERE id_hash='$id_hash';"
@@ -84,8 +83,8 @@ echo "[HASHCAT STATUS] Instance $id_arch: $status_processing"
 PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -c "UPDATE public.hashes SET status = '$status_processing' WHERE id_hash = $id_hash;"
 
 # Lancer Hashcat
-echo "[HASHCAT ACTION] hashcat -m $algorithm $path_hash $final_wordlist_file --status -O"
-hashcat -m $algorithm $path_hash $final_wordlist_file --status -O
+echo "[HASHCAT ACTION] hashcat -m $algorithm $path_hash $final_wordlist_file --status -O --status-timer 1 | grep Progress > /tmp/clean_output.txt"
+hashcat -m $algorithm $path_hash $final_wordlist_file --status -O --status-timer 1 | grep Progress > /tmp/clean_output.txt
 hashcat -m $algorithm $path_hash $final_wordlist_file --show
 hashcat -m $algorithm $path_hash $final_wordlist_file --show > $path_result
 
