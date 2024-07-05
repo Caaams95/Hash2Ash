@@ -102,15 +102,8 @@ if [ "$is_processed" -le 0 ]; then
 
     # Exécuter des commandes sur l'instance créée (exemple avec SSH)
     ssh -o "StrictHostKeyChecking=no" -i /home/cams/.ssh/Cle_test_terraform.pem ubuntu@"$instance_ip" \
-        "sudo apt-get update -y && sudo apt-get upgrade -y && \
-        sudo snap install aws-cli --classic && \
-        aws configure set aws_access_key_id $AWS_ACCESS_KEY_CAMILLE && \
-        aws configure set aws_secret_access_key $AWS_SECRET_KEY_CAMILLE && \
-        aws configure set default.region $REGION && \
-        sudo apt install postgresql -y && \
-        sudo apt-get install hashcat -y && \
-        chmod +x /tmp/script.sh && \
-        /tmp/script.sh $id_arch $id_hash "
+        "chmod +x /tmp/ssh_commande_start.sh && \
+        /tmp/ssh_commande_start.sh $id_arch $id_hash " 
 fi
 
 # Afficher le succès de la création de l'instance
