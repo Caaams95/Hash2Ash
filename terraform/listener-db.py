@@ -75,7 +75,9 @@ def launch_newinstance():
 def instance_terminate():
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute(f"SELECT id_arch FROM public.instances LEFT JOIN public.hashes ON public.hashes.fk_id_instance=public.instances.id_instance WHERE public.hashes.result IS NOT NULL AND public.instances.status != '{terminate}';")
+    cursor.execute(f"SELECT id_arch FROM public.instances \
+                   LEFT JOIN public.hashes ON public.hashes.fk_id_instance=public.instances.id_instance \
+                   WHERE public.hashes.result IS NOT NULL AND public.instances.status != '{terminate}';")
     results = cursor.fetchall()
     if results:
         for result in results:
@@ -89,7 +91,10 @@ def instance_terminate():
 def hash_cracked():
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute(f"SELECT id_arch FROM public.instances LEFT JOIN public.hashes ON public.hashes.fk_id_instance=public.instances.id_instance WHERE public.hashes.result IS NOT NULL AND public.hashes.status != '{cracked}';")
+    cursor.execute(f"SELECT id_arch FROM public.instances \
+                   LEFT JOIN public.hashes ON public.hashes.fk_id_instance=public.instances.id_instance \
+                   WHERE public.hashes.result IS NOT NULL \
+                   AND public.hashes.status != '{cracked}';")
     results = cursor.fetchall()
     if results:
         for result in results:
@@ -102,7 +107,10 @@ def hash_cracked():
 def hash_notfound():
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute(f"SELECT id_arch FROM public.instances LEFT JOIN public.hashes ON public.hashes.fk_id_instance=public.instances.id_instance WHERE public.hashes.result IS NULL AND public.hashes.status = '{notfound}' AND public.instances.status != '{terminate}';")
+    cursor.execute(f"SELECT id_arch FROM public.instances \
+                   LEFT JOIN public.hashes ON public.hashes.fk_id_instance=public.instances.id_instance \
+                   WHERE public.hashes.result IS NULL AND public.hashes.status = '{notfound}' \
+                   AND public.instances.status != '{terminate}';")
     results = cursor.fetchall()
     if results:
         for result in results:
@@ -117,7 +125,10 @@ def hash_notfound():
 def hash_processing():
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute(f"SELECT id_arch FROM public.instances LEFT JOIN public.hashes ON public.hashes.fk_id_instance=public.instances.id_instance WHERE public.hashes.result IS NULL AND public.instances.status = '{processing}' AND public.hashes.status != '{processing}' AND public.hashes.status != '{notfound}';")
+    cursor.execute(f"SELECT id_arch FROM public.instances \
+                   LEFT JOIN public.hashes ON public.hashes.fk_id_instance=public.instances.id_instance \
+                   WHERE public.hashes.result IS NULL AND public.instances.status = '{processing}' \
+                   AND public.hashes.status != '{processing}' AND public.hashes.status != '{notfound}';")
     results = cursor.fetchall()
     if results:
         for result in results:
