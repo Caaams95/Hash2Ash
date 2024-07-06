@@ -9,7 +9,7 @@ fi
 id_hash=$1
 path_parsed_output_hashcat=/tmp/parsed_output_hashcat.txt
 
-touch $path_progress_live
+touch $path_parsed_output_hashcat
 while true
 do 
     if [ $(wc -l < $path_parsed_output_hashcat) -gt 5 ]; then 
@@ -22,7 +22,7 @@ do
 
         PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -c  "UPDATE public.hashes SET progress ='$progress' WHERE id_hash='$id_hash';"
         PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -c  "UPDATE public.hashes SET time_estimated ='$time_estimated' WHERE id_hash='$id_hash';"
-        # Créer la tablehash_per_second et attribuer la variable
+        PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -c  "UPDATE public.hashes SET hash_per_second ='$hash_per_second' WHERE id_hash='$id_hash';"
     fi
     sleep 1
 done
