@@ -10,6 +10,9 @@ fi
 # ID de l'instance à supprimer
 instance_id=$1
 
+echo "[INSTANCE ACTION] Arret de l'instance $instance_id en cours"
+
+
 # Obtenir la liste des instances gérées par Terraform
 terraform_instances=$(terraform state list | grep 'aws_instance.instance-gratuite')
 
@@ -32,4 +35,4 @@ PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d 
 #PGPASSWORD='C5yAn39f8Tm7U13z' psql -U userHash2ash -h db-hash2ash-prod.c3m2i44y2jm0.us-east-1.rds.amazonaws.com -p 5432 -d hash2ash -c "UPDATE public.instances SET status='$status_shutdown' WHERE id_arch='$instance_id';"
 
 # Afficher le succès de la suppression de l'instance
-echo "Instance supprimée avec succès : $instance_id"
+echo "[INSTANCE ACTION] Arret de l'instance $instance_id terminé"
