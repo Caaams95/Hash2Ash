@@ -51,6 +51,7 @@ if [ -n "$url_hash" ]; then
     cat $path_hash
 else
     echo "[HASHCAT ERREUR] URL du hash introuvable dans la base de données."
+    PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -c "UPDATE $TABLE_HASHES SET status='Error' WHERE id_hash = $id_hash;"
     exit 1
 fi
 
@@ -75,7 +76,7 @@ if [ -n "$url_custom_list" ]; then
     wget "$url_custom_list" -O $custom_worldist_file
     cat "$custom_worldist_file" >> $temp_wordlist_file
 else
-    echo " [HASHCAT INFO] Aucune url_custom_list"
+    echo "[HASHCAT INFO] Aucune url_custom_list"
 fi
 
 ## Nettoyage de la wordlist
@@ -94,23 +95,28 @@ hashcat -m $algorithm $path_hash $final_wordlist_file --status -O --status-timer
 hashcat -m $algorithm $path_hash $final_wordlist_file --show
 hashcat -m $algorithm $path_hash $final_wordlist_file --show > $path_result
 
+
+
 # Envoyer le result en BDD
 ## Vérifie le code de sortie de hashcat
-# HASHCAT_EXIT_CODE=$?
+HASHCAT_EXIT_CODE=$?
 line_count=$(wc -l < path_result)
     # 0 = Not found
     # 1 = Cracked
 
-if [ $line_count -eq 0 ]; then
+if [ $HASHCAT_EXIT_CODE -ne 0 ] && [ $HASHCAT_EXIT_CODE -ne 1 ]; then
+    # probleme au lancement de hashcat
+    echo "[HASHCAT ERREUR] Erreur lors du lancement de hashcat avec le code de retour $HASHCAT_EXIT_CODE"
+    PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -c "UPDATE $TABLE_HASHES SET status='Error' WHERE id_hash = $id_hash;"
+elif [ $line_count -eq 0 ]; then
     # password pas trouvé
     echo "[HASHCAT RESULT] Password Exhausted"
-    PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -c "UPDATE $TABLE_HASHES SET status='NotFound' WHERE id_hash=$id_hash ;"
+    PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -c "UPDATE $TABLE_HASHES SET status='Not Found' WHERE id_hash=$id_hash ;"
 else
     # password trouvé
     echo "[HASHCAT RESULT] Password Cracked"
 
     # Envoyer le password en BDD
-    # Lire le fichier de sortie de Hashcat
     #hash:password
     while IFS=: read -r hash password
     do
