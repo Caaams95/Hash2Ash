@@ -18,6 +18,10 @@ temp_wordlist_file="/tmp/wordlist_temp.txt"
 final_wordlist_file="/tmp/wordlist.txt"
 custom_worldist_file="/tmp/custom_worldist_file.txt"
 
+path_parsed_output_hashcat="/tmp/parsed_output_hashcat.txt"
+log_hashcat="/tmp/log_hashcat.txt"
+
+
 echo "[VARIABLE INFO] id_arch = $id_arch"
 echo "[VARIABLE INFO] id_hash = $id_hash"
 # Récuperation de id_instance selon le id_arch 
@@ -59,7 +63,8 @@ echo "[HASHCAT INFO] Liste wordlist : $clean_wordlists"
 IFS=',' read -r -a wordlists <<< "$clean_wordlists"
 for wordlist in "${wordlists[@]}"; do
     echo "[HASHCAT ACTION] Téléchagement de $wordlist en cours..."
-    wget "https://hash2ash-wordlist.s3.amazonaws.com/$wordlist.txt" -O /tmp/$wordlist.txt
+    wget "https://$BUCKET_NAME_WORDLIST.s3.amazonaws.com/default-wordlist/$wordlist.txt" -O /tmp/$wordlist.txt
+    
     cat /tmp/$wordlist.txt >> $temp_wordlist_file # enelever le head et mettre cat 
 done
 
@@ -83,8 +88,9 @@ echo "[HASHCAT STATUS] Instance $id_arch: $status_processing"
 PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -c "UPDATE public.hashes SET status = '$status_processing' WHERE id_hash = $id_hash;"
 
 # Lancer Hashcat
-echo "[HASHCAT ACTION] hashcat -m $algorithm $path_hash $final_wordlist_file --status -O --status-timer 1 | grep Progress > /tmp/clean_output.txt"
-hashcat -m $algorithm $path_hash $final_wordlist_file --status -O --status-timer 1 | grep Progress > /tmp/clean_output.txt
+echo "[HASHCAT ACTION] hashcat -m $algorithm $path_hash $final_wordlist_file --status -O --status-timer 1 | tee -a $log_hashcat | grep -E 'Progress|Estimated'  > $path_parsed_output_hashcat "
+hashcat -m $algorithm $path_hash $final_wordlist_file --status -O --status-timer 1 | tee -a $log_hashcat | grep -E "Progress|Estimated|Speed"  > $path_parsed_output_hashcat
+
 hashcat -m $algorithm $path_hash $final_wordlist_file --show
 hashcat -m $algorithm $path_hash $final_wordlist_file --show > $path_result
 
@@ -110,8 +116,8 @@ else
     do
         if [ -n "$hash" ] && [ -n "$password" ]; then
             echo "[HASHCAT ACTION] Upload tu mot de passe en BDD"
-            aws s3 cp $path_result s3://hash2ash-hash/cracked/result-$id_arch.txt
-            url_hash_cracked="https://hash2ash-hash.s3.amazonaws.com/cracked/result-$id_arch.txt"
+            aws s3 cp $path_result s3://$BUCKET_NAME_HASH/cracked/result-$id_arch.txt
+            url_hash_cracked="https://$BUCKET_NAME_HASH.s3.amazonaws.com/cracked/result-$id_arch.txt"
             #PGPASSWORD="$DB_PASSWORD" psql -U $DB_USERNAME -h $DB_HOST -p $DB_PORT -d $DB_NAME -c "UPDATE $TABLE_HASHES SET result='$password' WHERE id_hash=$id_hash;"
             PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -c "UPDATE $TABLE_HASHES SET result='$url_hash_cracked' WHERE id_hash=$id_hash";
             fi
