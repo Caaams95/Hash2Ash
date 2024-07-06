@@ -103,7 +103,7 @@ if [ "$is_processed" -le 0 ]; then
     # Exécuter des commandes sur l'instance créée (exemple avec SSH)
     ssh -o "StrictHostKeyChecking=no" -i /home/cams/.ssh/Cle_test_terraform.pem ubuntu@"$instance_ip" \
         "chmod +x /tmp/ssh_commande_start.sh && \
-        /tmp/ssh_commande_start.sh $id_arch $id_hash " 
+        /tmp/ssh_commande_start.sh $id_arch $id_hash" 
 fi
 
 # Afficher le succès de la création de l'instance
