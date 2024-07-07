@@ -89,11 +89,11 @@ echo "[HASHCAT STATUS] Instance $id_arch: $status_processing"
 PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -c "UPDATE public.hashes SET status = '$status_processing' WHERE id_hash = $id_hash;"
 
 # Lancer Hashcat
-echo "[HASHCAT ACTION] hashcat -m $algorithm $path_hash $final_wordlist_file --status -O --status-timer 1 | tee -a $log_hashcat | grep -E 'Progress|Estimated'  > $path_parsed_output_hashcat "
-hashcat -m $algorithm $path_hash $final_wordlist_file --status -O --status-timer 1 | tee -a $log_hashcat | grep -E "Progress|Estimated|Speed"  > $path_parsed_output_hashcat
+echo "[HASHCAT ACTION] hashcat $algorithm $path_hash $final_wordlist_file --status -O --status-timer 1 | tee -a $log_hashcat | grep -E 'Progress|Estimated'  > $path_parsed_output_hashcat "
+hashcat $algorithm $path_hash $final_wordlist_file --status -O --status-timer 1 | tee -a $log_hashcat | grep -E "Progress|Estimated|Speed"  > $path_parsed_output_hashcat
 
-hashcat -m $algorithm $path_hash $final_wordlist_file --show
-hashcat -m $algorithm $path_hash $final_wordlist_file --show > $path_result
+hashcat $algorithm $path_hash $final_wordlist_file --show
+hashcat $algorithm $path_hash $final_wordlist_file --show > $path_result
 
 
 
