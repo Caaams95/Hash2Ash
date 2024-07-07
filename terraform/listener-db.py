@@ -90,6 +90,7 @@ def instance_terminate():
             id_arch = result[0]
             subprocess.run(f"./instance-status.sh {id_arch} '{terminate}'", shell=True, check=True)
             subprocess.run(f"./terraform_stop_instance.sh {id_arch}", shell=True, check=True)
+            subprocess.run(f"./cost_instance.sh {id_arch}", shell=True, check=True)
             print(f"{vert("[STATUS]")} Instance {id_arch} : {terminate}.")
     cursor.close()
     conn.close()
