@@ -35,10 +35,11 @@ db_config = {
 # Constantes pour les états
 terminate   = "Terminate"
 cracked     = "Cracked"
-notfound    = "NotFound"
+notfound    = "Not Found"
 processing  = "Processing"
 inqueue     = "In Queue"
 initialisation =  "Initialisation"
+error="Error"
 
 def get_db_connection():
     return psycopg2.connect(**db_config)
@@ -75,13 +76,21 @@ def launch_newinstance():
 def instance_terminate():
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute(f"SELECT id_arch FROM public.instances LEFT JOIN public.hashes ON public.hashes.fk_id_instance=public.instances.id_instance WHERE public.hashes.result IS NOT NULL AND public.instances.status != '{terminate}';")
+    cursor.execute(f"""
+        SELECT id_arch FROM public.instances
+        LEFT JOIN public.hashes ON public.hashes.fk_id_instance = public.instances.id_instance
+        WHERE (public.hashes.result IS NOT NULL
+        AND public.instances.status != '{terminate}')
+        OR (public.hashes.status = '{error}'
+        AND public.instances.status != '{terminate}');
+    """)    
     results = cursor.fetchall()
     if results:
         for result in results:
             id_arch = result[0]
             subprocess.run(f"./instance-status.sh {id_arch} '{terminate}'", shell=True, check=True)
             subprocess.run(f"./terraform_stop_instance.sh {id_arch}", shell=True, check=True)
+            subprocess.run(f"./cost_instance.sh {id_arch}", shell=True, check=True)
             print(f"{vert("[STATUS]")} Instance {id_arch} : {terminate}.")
     cursor.close()
     conn.close()
@@ -89,7 +98,12 @@ def instance_terminate():
 def hash_cracked():
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute(f"SELECT id_arch FROM public.instances LEFT JOIN public.hashes ON public.hashes.fk_id_instance=public.instances.id_instance WHERE public.hashes.result IS NOT NULL AND public.hashes.status != '{cracked}';")
+    cursor.execute(f"""
+        SELECT id_arch FROM public.instances
+        LEFT JOIN public.hashes ON public.hashes.fk_id_instance=public.instances.id_instance
+        WHERE public.hashes.result IS NOT NULL
+        AND public.hashes.status != '{cracked}';
+    """)
     results = cursor.fetchall()
     if results:
         for result in results:
@@ -102,7 +116,14 @@ def hash_cracked():
 def hash_notfound():
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute(f"SELECT id_arch FROM public.instances LEFT JOIN public.hashes ON public.hashes.fk_id_instance=public.instances.id_instance WHERE public.hashes.result IS NULL AND public.hashes.status = '{notfound}' AND public.instances.status != '{terminate}';")
+    cursor.execute(f"""
+        SELECT id_arch FROM public.instances
+        LEFT JOIN public.hashes ON public.hashes.fk_id_instance=public.instances.id_instance
+        WHERE public.hashes.result IS NULL
+        AND public.hashes.status = '{notfound}'
+        AND public.hashes.status = '{error}'
+        AND public.instances.status != '{terminate}';
+    """)
     results = cursor.fetchall()
     if results:
         for result in results:
@@ -117,7 +138,16 @@ def hash_notfound():
 def hash_processing():
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute(f"SELECT id_arch FROM public.instances LEFT JOIN public.hashes ON public.hashes.fk_id_instance=public.instances.id_instance WHERE public.hashes.result IS NULL AND public.instances.status = '{processing}' AND public.hashes.status != '{processing}' AND public.hashes.status != '{notfound}';")
+    cursor.execute(f"""
+        SELECT id_arch FROM public.instances
+        LEFT JOIN public.hashes ON public.hashes.fk_id_instance=public.instances.id_instance
+        WHERE public.hashes.result IS NULL
+        AND public.instances.status = '{processing}'
+        AND public.hashes.status != '{processing}'
+        AND public.hashes.status != '{cracked}'
+        AND public.hashes.status != '{error}'
+        AND public.hashes.status != '{notfound}';
+    """)
     results = cursor.fetchall()
     if results:
         for result in results:
@@ -146,8 +176,10 @@ async def main():
 
             # Pause asynchrone entre chaque incrémentation pour observer l'effet
             await asyncio.sleep(5)
+    except asyncio.CancelledError:
+        print("Fermeture du Listener...")
     except KeyboardInterrupt:
-        print("Listener stopped.")
+        print("Fermeture du Listener...")
     finally:
         cursor.close()
         conn.close()
