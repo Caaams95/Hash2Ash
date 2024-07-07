@@ -88,9 +88,13 @@ def instance_terminate():
     if results:
         for result in results:
             id_arch = result[0]
+            print(f"{vert("[LISTENER ACTION]")} ./instance-status.sh {id_arch} '{terminate}")
             subprocess.run(f"./instance-status.sh {id_arch} '{terminate}'", shell=True, check=True)
+            print(f"{vert("[LISTENER ACTION]")} ./terraform_stop_instance.sh {id_arch}")
             subprocess.run(f"./terraform_stop_instance.sh {id_arch}", shell=True, check=True)
+            print(f"{vert("[LISTENER ACTION]")} ./terraform_stop_instance.sh {id_arch}")
             subprocess.run(f"./cost_instance.sh {id_arch}", shell=True, check=True)
+            
             print(f"{vert("[STATUS]")} Instance {id_arch} : {terminate}.")
     cursor.close()
     conn.close()

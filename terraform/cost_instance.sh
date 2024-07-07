@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Définir la locale pour s'assurer que les nombres avec des points décimaux sont correctement interprétés
-# permet d'eviter les bug de : 99,99€ ici la , pose probleme car en temps normal il faut un .
+# permet d'eviter les bug de : 99,99€ ici la "," pose probleme car en temps normal il faut un "." donc on passe en en_US.UTF-8
 export LC_NUMERIC="en_US.UTF-8"
 
 source ../.env
