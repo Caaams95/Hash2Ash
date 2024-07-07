@@ -179,7 +179,24 @@ def delete_hash(id_hash):
         abort(403)
     db.session.delete(hash)
     db.session.commit()
-    flash('The hash has been deleted!', 'success')
+    flash('The hash has been deleted !', 'success')
+    if request.referrer.endswith('/account/myhashes'):
+        return redirect(url_for('account'))
+    else:
+        return redirect(url_for('adminpanelUserHashes', id_user=hash.fk_id_user))
+    
+# Route pour la Stop d'un hash
+@app.route('/adminpanel/hash_<int:id_hash>/stop', methods=['POST'])
+@login_required
+def stop_hash(id_hash):
+    hash = Hashes.query.get_or_404(id_hash)
+    if current_user.role != 'admin' and current_user.id_user != hash.fk_id_user:
+        abort(403)
+    if hash.status != 'Processing':
+        return redirect(url_for('account'))
+    hash.status = 'Terminate'
+    db.session.commit()
+    flash('The hash has been stopped !', 'success')
     if request.referrer.endswith('/account/myhashes'):
         return redirect(url_for('account'))
     else:
@@ -199,6 +216,8 @@ def delete_user(id_user):
     db.session.commit()
     flash(f'The user '+ user.username + ' has been deleted!', 'success')
     return redirect(url_for('adminpanel'))
+
+
 
 def send_reset_email(user):
     token = user.get_reset_token()
