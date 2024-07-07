@@ -73,10 +73,6 @@
         {% endif %}
     </div>
     <div class="col-md-12">
-        {{ form.algorithm_autodetect(class="form-check-input") }}
-        {{ form.algorithm_autodetect.label(class="form-check-label") }}
-    </div>
-    <div class="col-md-12">
         {{ form.provider.label(class="form-control-label") }}
         {{ form.provider(class="form-control form-control-lg") }}
         {% if form.provider.errors %}

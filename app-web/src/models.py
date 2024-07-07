@@ -62,7 +62,7 @@ class Hashes(db.Model):
     result = db.Column(db.String(140), nullable=True) ## Hash déchiffré
     status = db.Column(db.String(20), nullable=False)
     provider = db.Column(db.String(20), nullable=False)
-    progress = db.Column(db.Integer, nullable=False)
+    progress = db.Column(db.Integer, nullable=True)
     price = db.Column(db.Float, nullable=False)
 
 

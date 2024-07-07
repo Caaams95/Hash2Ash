@@ -96,7 +96,7 @@ def crackstation():
             else:
                 url_custom_wordlist = None
             
-            hash = Hashes(hash=url_hash, name=form.name.data ,algorithm=form.algorithm.data, wordlist=form.wordlist.data, custom_wordlist=url_custom_wordlist ,power=form.power.data, provider=form.provider.data, status='In Queue', progress=0, price=0, fk_id_user=current_user.id_user)
+            hash = Hashes(hash=url_hash, name=form.name.data ,algorithm=form.algorithm.data, wordlist=form.wordlist.data, custom_wordlist=url_custom_wordlist ,power=form.power.data, provider=form.provider.data, status='In Queue', price=0, fk_id_user=current_user.id_user)
             db.session.add(hash)
             db.session.commit()
             #flash(f'Hash added to database', 'info') # Pour debbuger le formulaire
