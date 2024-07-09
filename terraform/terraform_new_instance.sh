@@ -26,16 +26,16 @@ echo power : $power
 terraform init
 
 # Récupérer le nombre actuel d'instances actives dans l'état Terraform
-current_count_t2_large=$(terraform state list | grep 'aws_instance.instance_t2_large' | wc -l)
-current_count_c5_xlarge=$(terraform state list | grep 'aws_instance.instance_c5_xlarge' | wc -l)
-current_count_c7a_12xlarge=$(terraform state list | grep 'aws_instance.instance_c7a_12xlarge' | wc -l)
+current_count_low=$(terraform state list | grep 'aws_instance.instance_low' | wc -l)
+current_count_medium=$(terraform state list | grep 'aws_instance.instance_medium' | wc -l)
+current_count_high=$(terraform state list | grep 'aws_instance.instance_high' | wc -l)
 
 if [ "$power" == "Low" ]; then
     type_instance="t2.large"
-    new_count=$((current_count_t2_large + 1))
-    terraform apply -refresh=false -auto-approve -var="total_instance_count_t2_large=$new_count" -var="total_instance_count_c5_xlarge=$current_count_c5_xlarge" -var="total_instance_count_c7a_12xlarge=$current_count_c7a_12xlarge"
+    new_count=$((current_count_low + 1))
+    terraform apply -refresh=false -auto-approve -var="total_instance_count_low=$new_count" -var="total_instance_count_medium=$current_count_medium" -var="total_instance_count_high=$current_count_high"
     # Récupérer les détails des instances créées
-    instances_details=$(terraform output -json instances_details_t2_large)
+    instances_details=$(terraform output -json instances_details_low)
 
     # Trouver les détails de la dernière instance créée
     latest_instance=$(echo "$instances_details" | jq -c ".[-1]")
@@ -47,10 +47,10 @@ if [ "$power" == "Low" ]; then
 
 elif [ "$power" == "Medium" ]; then
     type_instance="c5.xlarge"
-    new_count=$((current_count_c5_xlarge + 1))
-    terraform apply -refresh=false -auto-approve -var="total_instance_count_t2_large=$current_count_t2_large" -var="total_instance_count_c5_xlarge=$new_count" -var="total_instance_count_c7a_12xlarge=$current_count_c7a_12xlarge"
+    new_count=$((current_count_medium + 1))
+    terraform apply -refresh=false -auto-approve -var="total_instance_count_low=$current_count_low" -var="total_instance_count_medium=$new_count" -var="total_instance_count_high=$current_count_high"
     # Récupérer les détails des instances créées
-    instances_details=$(terraform output -json instances_details_c5_xlarge)
+    instances_details=$(terraform output -json instances_details_medium)
 
     # Trouver les détails de la dernière instance créée
     latest_instance=$(echo "$instances_details" | jq -c ".[-1]")
@@ -62,10 +62,10 @@ elif [ "$power" == "Medium" ]; then
 
 elif [ "$power" == "High" ]; then
     type_instance="c7a.12xlarge"
-    new_count=$((current_count_c7a_12xlarge + 1))
-    terraform apply -refresh=false -auto-approve -var="total_instance_count_t2_large=$current_count_t2_large" -var="total_instance_count_c5_xlarge=$current_count_c5_xlarge" -var="total_instance_count_c7a_12xlarge=$new_count"
+    new_count=$((current_count_high + 1))
+    terraform apply -refresh=false -auto-approve -var="total_instance_count_low=$current_count_low" -var="total_instance_count_medium=$current_count_medium" -var="total_instance_count_high=$new_count"
     # Récupérer les détails des instances créées
-    instances_details=$(terraform output -json instances_details_c7a_12xlarge)
+    instances_details=$(terraform output -json instances_details_high)
 
     # Trouver les détails de la dernière instance créée
     latest_instance=$(echo "$instances_details" | jq -c ".[-1]")

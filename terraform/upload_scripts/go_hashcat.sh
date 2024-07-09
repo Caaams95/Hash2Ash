@@ -5,6 +5,7 @@ if [ $# -ne 2 ]; then
     echo "Usage: $0 <id_arch> <id_hash>"
     exit 1
 fi
+echo "========================== LANCEMENT DE HASHCAT =========================="
 
 id_arch=$1
 id_hash=$2

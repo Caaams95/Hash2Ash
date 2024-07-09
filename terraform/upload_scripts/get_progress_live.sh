@@ -6,6 +6,8 @@ if [ $# -ne 1 ]; then
     exit 1
 fi
 
+echo "========================== PREGRESS LIVE =========================="
+
 id_hash=$1
 path_parsed_output_hashcat=/tmp/parsed_output_hashcat.txt
 

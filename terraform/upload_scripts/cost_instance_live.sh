@@ -22,11 +22,11 @@ while true
 do 
     DATE_END=$(date +'%Y-%m-%d %H:%M:%S')  # Utiliser la date actuelle comme date de fin
 
-    echo "========================== CALCUL DU PRIX =========================="
-    echo id_arch = $id_arch
-    echo id_instance = $id_instance
-    echo DATE_START = $DATE_START
-    echo CURRENT DATE = $DATE_END
+    echo "========================== CALCUL DU PRIX EN LIVE =========================="
+#    echo id_arch = $id_arch
+#    echo id_instance = $id_instance
+#    echo DATE_START = $DATE_START
+#    echo CURRENT DATE = $DATE_END
 
     # Convertir les dates en secondes depuis l'époque (Epoch)
     SECONDS1=$(date -d "$DATE_START" +%s.%N)
@@ -56,14 +56,13 @@ do
     echo "Cout par heure : $price €"
     echo "Temps d'activité : $HOURS h - $MINUTES min - $SECONDS s"
 
-    echo "Cout heures = $HOURS_COST €"
-    echo "Cout minutes = $MINUTES_COST €"
-    echo "Cout secondes = $SECONDS_COST €"
+#    echo "Cout heures = $HOURS_COST €"
+#    echo "Cout minutes = $MINUTES_COST €"
+#    echo "Cout secondes = $SECONDS_COST €"
     echo "Le coût total pour la période entre $DATE_START et $DATE_END est de $TOTAL_COST €"
 
     # Mettre à jour la base de données avec le coût total en entier
     PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -c "UPDATE public.instances SET price_total='$TOTAL_COST' WHERE id_arch='$id_arch';"
-    echo "========================== FIN CALCUL DU PRIX =========================="
 
-    sleep 5
+    sleep 60
 done
