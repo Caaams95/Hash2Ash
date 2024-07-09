@@ -39,7 +39,8 @@ notfound    = "Not Found"
 processing  = "Processing"
 inqueue     = "In Queue"
 initialisation =  "Initialisation"
-error="Error"
+error       = "Error"
+expired     = "Expired"
 
 def get_db_connection():
     return psycopg2.connect(**db_config)
@@ -73,6 +74,7 @@ def launch_newinstance():
     cursor.close()
     conn.close()
 
+
 def instance_terminate():
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -82,6 +84,8 @@ def instance_terminate():
         WHERE (public.hashes.result IS NOT NULL
         AND public.instances.status != '{terminate}')
         OR (public.hashes.status = '{error}'
+        AND public.instances.status != '{terminate}')
+        OR (public.hashes.status = '{expired}'
         AND public.instances.status != '{terminate}');
     """)    
     results = cursor.fetchall()
@@ -92,8 +96,8 @@ def instance_terminate():
             subprocess.run(f"./instance-status.sh {id_arch} '{terminate}'", shell=True, check=True)
             print(f"{vert("[LISTENER ACTION]")} ./terraform_stop_instance.sh {id_arch}")
             subprocess.run(f"./terraform_stop_instance.sh {id_arch}", shell=True, check=True)
-            print(f"{vert("[LISTENER ACTION]")} ./terraform_stop_instance.sh {id_arch}")
-            subprocess.run(f"./cost_instance.sh {id_arch}", shell=True, check=True)
+            print(f"{vert("[BDD UPDATE]")} ./cost_instance.sh {id_arch}")
+            subprocess.run(f"./cost_instance_total.sh {id_arch}", shell=True, check=True)
             
             print(f"{vert("[STATUS]")} Instance {id_arch} : {terminate}.")
     cursor.close()
@@ -117,7 +121,28 @@ def hash_cracked():
     cursor.close()
     conn.close()
 
+def hash_expired():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(f"""
+        SELECT id_hash FROM public.hashes
+        LEFT JOIN public.instances ON public.instances.id_instance = public.hashes.fk_id_instance
+        WHERE public.hashes.price_limit >= public.instances.price_total 
+        AND public.hashes.status = '{expired}' ;
+    """)    
+
+    results = cursor.fetchall()
+    if results:
+        for result in results:
+            id_arch = result[0]
+            subprocess.run(f"./hash-status.sh {id_arch} '{expired}'", shell=True, check=True)
+            print(f"{vert("[STATUS]")} Instance {id_arch} : Hash {expired}.")
+    cursor.close()
+    conn.close()
+
 def hash_notfound():
+    # Hashcat update hashes.status en Not Found automatiquement
+
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute(f"""
@@ -125,17 +150,21 @@ def hash_notfound():
         LEFT JOIN public.hashes ON public.hashes.fk_id_instance=public.instances.id_instance
         WHERE public.hashes.result IS NULL
         AND public.hashes.status = '{notfound}'
-        AND public.hashes.status = '{error}'
         AND public.instances.status != '{terminate}';
     """)
+    
     results = cursor.fetchall()
     if results:
         for result in results:
             id_arch = result[0]
-            subprocess.run(f"./instance-status.sh {id_arch} '{terminate}'", shell=True, check=True)
-            subprocess.run(f"./terraform_stop_instance.sh {id_arch}", shell=True, check=True)
             print(f"{vert("[STATUS]")} Instance {id_arch} : Hash non trouvé.")
-            print(f"{vert("[ACTION]")} Instance {id_arch} : {terminate}.")
+            print(f"{vert("[LISTENER ACTION]")} ./instance-status.sh {id_arch} '{terminate}")
+            subprocess.run(f"./instance-status.sh {id_arch} '{terminate}'", shell=True, check=True)
+            print(f"{vert("[LISTENER ACTION]")} ./terraform_stop_instance.sh {id_arch}")
+            subprocess.run(f"./terraform_stop_instance.sh {id_arch}", shell=True, check=True)
+            print(f"{vert("[BDD UPDATE]")} ./cost_instance.sh {id_arch}")
+            subprocess.run(f"./cost_instance.sh {id_arch}", shell=True, check=True)
+            print(f"{vert("[STATUS]")} Instance {id_arch} : {terminate}.")
     cursor.close()
     conn.close()
 
@@ -147,10 +176,7 @@ def hash_processing():
         LEFT JOIN public.hashes ON public.hashes.fk_id_instance=public.instances.id_instance
         WHERE public.hashes.result IS NULL
         AND public.instances.status = '{processing}'
-        AND public.hashes.status != '{processing}'
-        AND public.hashes.status != '{cracked}'
-        AND public.hashes.status != '{error}'
-        AND public.hashes.status != '{notfound}';
+        AND public.hashes.status = '{initialisation}';
     """)
     results = cursor.fetchall()
     if results:

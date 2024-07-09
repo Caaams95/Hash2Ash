@@ -79,15 +79,19 @@ resource "aws_instance" "instance_t2_large" {
     destination = "/tmp/go_hashcat.sh"
   }
   provisioner "file" {
-    source      = "./upload_scripts/get_progress.sh"
-    destination = "/tmp/get_progress.sh"
+    source      = "./upload_scripts/get_progress_live.sh"
+    destination = "/tmp/get_progress_live.sh"
+  }
+  provisioner "file" {
+    source      = "./upload_scripts/cost_instance_live.sh"
+    destination = "/tmp/cost_instance_live.sh"
   }
 
-    provisioner "file" {
+  provisioner "file" {
     source      = "./upload_scripts/.env_script"
     destination = "/tmp/.env_script"
   }
-    connection {
+  connection {
     type        = "ssh"
     user        = "ubuntu"
     private_key = file("/home/cams/.ssh/Cle_test_terraform.pem")
@@ -121,6 +125,10 @@ resource "aws_instance" "instance_c5_xlarge" {
   provisioner "file" {
     source      = "./upload_scripts/get_progress.sh"
     destination = "/tmp/get_progress.sh"
+  }
+  provisioner "file" {
+    source      = "./upload_scripts/cost_instance_live.sh"
+    destination = "/tmp/cost_instance_live.sh"
   }
     provisioner "file" {
     source      = "./upload_scripts/.env_script"
@@ -161,6 +169,10 @@ resource "aws_instance" "instance_c7a_12xlarge" {
     provisioner "file" {
     source      = "./upload_scripts/get_progress.sh"
     destination = "/tmp/get_progress.sh"
+  }
+  provisioner "file" {
+    source      = "./upload_scripts/cost_instance_live.sh"
+    destination = "/tmp/cost_instance_live.sh"
   }
 
     provisioner "file" {
