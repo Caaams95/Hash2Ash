@@ -86,6 +86,8 @@ def instance_terminate():
         OR (public.hashes.status = '{error}'
         AND public.instances.status != '{terminate}')
         OR (public.hashes.status = '{expired}'
+        AND public.instances.status != '{terminate}')
+        OR (public.hashes.status = '{terminate}'
         AND public.instances.status != '{terminate}');
     """)    
     results = cursor.fetchall()
