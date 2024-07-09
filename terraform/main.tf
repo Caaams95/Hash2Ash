@@ -12,19 +12,19 @@ provider "aws" {
   region = "us-east-1"
 }
 
-variable "total_instance_count_t2_large" {
+variable "total_instance_count_low" {
   description = "Total number of instances to create"
   type        = number
   default     = 0
 }
 
-variable "total_instance_count_c5_xlarge" {
+variable "total_instance_count_medium" {
   description = "Total number of instances to create"
   type        = number
   default     = 0
 }
 
-variable "total_instance_count_c7a_12xlarge" {
+variable "total_instance_count_high" {
   description = "Total number of instances to create"
   type        = number
   default     = 0
@@ -55,15 +55,15 @@ resource "aws_security_group" "allow_all" {
   }
 }
 
-# instance_t2_large ==========================================================
-resource "aws_instance" "instance_t2_large" {
-  count         = var.total_instance_count_t2_large
+# instance_low ==========================================================
+resource "aws_instance" "instance_low" {
+  count         = var.total_instance_count_low
   ami           = "ami-04b70fa74e45c3917" # Ubuntu
   instance_type = "t2.large"
   key_name      = "Cle_test_terraform"
 
   tags = {
-    Name = "ubuntu-gratuit-${count.index}"
+    Name = "low-instance-${count.index}"
   }
 
   vpc_security_group_ids = [
@@ -79,15 +79,19 @@ resource "aws_instance" "instance_t2_large" {
     destination = "/tmp/go_hashcat.sh"
   }
   provisioner "file" {
-    source      = "./upload_scripts/get_progress.sh"
-    destination = "/tmp/get_progress.sh"
+    source      = "./upload_scripts/get_progress_live.sh"
+    destination = "/tmp/get_progress_live.sh"
+  }
+  provisioner "file" {
+    source      = "./upload_scripts/cost_instance_live.sh"
+    destination = "/tmp/cost_instance_live.sh"
   }
 
-    provisioner "file" {
+  provisioner "file" {
     source      = "./upload_scripts/.env_script"
     destination = "/tmp/.env_script"
   }
-    connection {
+  connection {
     type        = "ssh"
     user        = "ubuntu"
     private_key = file("/home/cams/.ssh/Cle_test_terraform.pem")
@@ -95,15 +99,15 @@ resource "aws_instance" "instance_t2_large" {
   }
 }
 
-# instance_c5_xlarge ==========================================================
-resource "aws_instance" "instance_c5_xlarge" {
-  count         = var.total_instance_count_c5_xlarge
+# instance_medium ==========================================================
+resource "aws_instance" "instance_medium" {
+  count         = var.total_instance_count_medium
   ami           = "ami-04b70fa74e45c3917" # Ubuntu
   instance_type = "c5.xlarge"
   key_name      = "Cle_test_terraform"
 
   tags = {
-    Name = "ubuntu-gratuit-${count.index}"
+    Name = "medium-instance-${count.index}"
   }
 
   vpc_security_group_ids = [
@@ -119,8 +123,12 @@ resource "aws_instance" "instance_c5_xlarge" {
     destination = "/tmp/go_hashcat.sh"
   }
   provisioner "file" {
-    source      = "./upload_scripts/get_progress.sh"
-    destination = "/tmp/get_progress.sh"
+    source      = "./upload_scripts/get_progress_live.sh"
+    destination = "/tmp/get_progress_live.sh"
+  }
+  provisioner "file" {
+    source      = "./upload_scripts/cost_instance_live.sh"
+    destination = "/tmp/cost_instance_live.sh"
   }
     provisioner "file" {
     source      = "./upload_scripts/.env_script"
@@ -135,15 +143,15 @@ resource "aws_instance" "instance_c5_xlarge" {
 }
 
 
-# instance_c7a_12xlarge ==========================================================
-resource "aws_instance" "instance_c7a_12xlarge" {
-  count         = var.total_instance_count_c7a_12xlarge
+# instance_high ==========================================================
+resource "aws_instance" "instance_high" {
+  count         = var.total_instance_count_high
   ami           = "ami-04b70fa74e45c3917" # Ubuntu
   instance_type = "c7a.12xlarge"
   key_name      = "Cle_test_terraform"
 
   tags = {
-    Name = "ubuntu-gratuit-${count.index}"
+    Name = "high-instance-${count.index}"
   }
 
   vpc_security_group_ids = [
@@ -159,8 +167,12 @@ resource "aws_instance" "instance_c7a_12xlarge" {
     destination = "/tmp/go_hashcat.sh"
   }
     provisioner "file" {
-    source      = "./upload_scripts/get_progress.sh"
-    destination = "/tmp/get_progress.sh"
+    source      = "./upload_scripts/get_progress_live.sh"
+    destination = "/tmp/get_progress_live.sh"
+  }
+  provisioner "file" {
+    source      = "./upload_scripts/cost_instance_live.sh"
+    destination = "/tmp/cost_instance_live.sh"
   }
 
     provisioner "file" {
@@ -175,9 +187,9 @@ resource "aws_instance" "instance_c7a_12xlarge" {
   }
 }
 
-output "instances_details_t2_large" {
+output "instances_details_low" {
   value = [
-    for instance in aws_instance.instance_t2_large : {
+    for instance in aws_instance.instance_low : {
       public_ip   = instance.public_ip
       name        = lookup(instance.tags, "Name")
       instance_id = instance.id
@@ -185,9 +197,9 @@ output "instances_details_t2_large" {
   ]
 }
 
-output "instances_details_c5_xlarge" {
+output "instances_details_medium" {
   value = [
-    for instance in aws_instance.instance_c5_xlarge : {
+    for instance in aws_instance.instance_medium : {
       public_ip   = instance.public_ip
       name        = lookup(instance.tags, "Name")
       instance_id = instance.id
@@ -195,9 +207,9 @@ output "instances_details_c5_xlarge" {
   ]
 }
 
-output "instances_details_c7a_12xlarge" {
+output "instances_details_high" {
   value = [
-    for instance in aws_instance.instance_c7a_12xlarge : {
+    for instance in aws_instance.instance_high : {
       public_ip   = instance.public_ip
       name        = lookup(instance.tags, "Name")
       instance_id = instance.id

@@ -19,6 +19,7 @@ DATE_END=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$D
 
 price=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -t -c "SELECT price_hash2ash FROM public.instances WHERE id_arch='$id_arch';" | xargs)
 
+echo "========================== CALCUL DU PRIX =========================="
 echo id_arch = $id_arch
 echo id_instance = $id_instance
 echo DATE_START = $DATE_START
@@ -47,9 +48,6 @@ TOTAL_COST=$(echo "$HOURS_COST + $MINUTES_COST + $SECONDS_COST" | bc -l)
 TOTAL_COST=$(echo "$TOTAL_COST + 0.005" | bc -l)
 TOTAL_COST=$(printf "%.2f" "$TOTAL_COST")
 
-# Convertir le coût total en entier pour l'upload en BDD
-TOTAL_COST_INT=$(printf "%.0f" "$TOTAL_COST")
-
 # Afficher le coût total
 echo " "
 echo "Cout par heure : $price €"
@@ -61,4 +59,5 @@ echo "Cout secondes = $SECONDS_COST €"
 echo "Le coût total pour la période entre $DATE_START et $DATE_END est de $TOTAL_COST €"
 
 # Mettre à jour la base de données avec le coût total en entier
-PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -c "UPDATE public.instances SET price_total='$TOTAL_COST_INT' WHERE id_arch='$id_arch';"
+PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -c "UPDATE public.instances SET price_total='$TOTAL_COST' WHERE id_arch='$id_arch';"
+echo "========================== FIN CALCUL DU PRIX =========================="

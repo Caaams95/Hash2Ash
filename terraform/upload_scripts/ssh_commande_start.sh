@@ -20,5 +20,7 @@ sudo apt install postgresql -y
 sudo apt-get install hashcat -y
 chmod +x /tmp/go_hashcat.sh
 chmod +x /tmp/get_progress.sh
-/tmp/get_progress.sh $id_hash &
+chmod +x /tmp/cost_instance_live.sh
+/tmp/get_progress_live.sh $id_hash &
+/tmp/cost_instance_live.sh $id_arch &
 /tmp/go_hashcat.sh $id_arch $id_hash
