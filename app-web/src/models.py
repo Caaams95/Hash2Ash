@@ -42,15 +42,17 @@ class Instances(db.Model):
     price_hash2ash = db.Column(db.Float, nullable=False)
     date_start = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     date_shutdown = db.Column(db.DateTime, nullable=True)
-    hashes = db.relationship('Hashes', backref='instance', lazy=True)
+    status = db.Column(db.String(20), nullable=True)
+    price_total = db.Column(db.Float, nullable=True)
+    fk_id_hash = db.Column(db.Integer, nullable=True)
 
     def __repr__(self):
-        return f"instances('{self.type_instance}', '{self.id_arch}', '{self.price_provider}', '{self.date_start}', '{self.date_shutdown}','{self.price_hash2ash}')"
+        return f"instances('{self.type_instance}', '{self.id_arch}', '{self.price_provider}', '{self.date_start}', '{self.date_shutdown}','{self.price_hash2ash}', '{self.status}', '{self.price_total}')"
     
 class Hashes(db.Model):
     id_hash = db.Column(db.Integer, primary_key=True)
     fk_id_user = db.Column(db.Integer, db.ForeignKey('users.id_user'), nullable=False)
-    fk_id_instance = db.Column(db.Integer, db.ForeignKey('instances.id_instance'), nullable=True)
+    fk_id_instance = db.Column(db.Integer, db.ForeignKey('instances.id_instance', use_alter=True), nullable=True)
     date_start = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     date_end = db.Column(db.DateTime, nullable=True)
     name = db.Column(db.String(60), nullable=False)
@@ -62,9 +64,12 @@ class Hashes(db.Model):
     result = db.Column(db.String(140), nullable=True) ## Hash déchiffré
     status = db.Column(db.String(20), nullable=False)
     provider = db.Column(db.String(20), nullable=False)
-    progress = db.Column(db.Integer, nullable=True)
+    progress = db.Column(db.String(50), nullable=True, default='0/0 (0.0%)')
     price = db.Column(db.Float, nullable=False)
+    time_estimated = db.Column(db.String(60), nullable=True)
+    hash_per_second = db.Column(db.String(20), nullable=True, default='0 H/s')
+    price_limit = db.Column(db.Float, nullable=True)
 
 
     def __repr__(self):
-        return f"Hashes('{self.name}', '{self.hash}', '{self.power}', '{self.wordlist}', '{self.custom_wordlist}', '{self.algorithm}', '{self.result}', '{self.status}', '{self.progress}', '{self.price}')"
+        return f"Hashes('{self.name}', '{self.hash}', '{self.power}', '{self.wordlist}', '{self.custom_wordlist}', '{self.algorithm}', '{self.result}', '{self.status}', '{self.progress}', '{self.price}', '{self.time_estimated}', '{self.hash_per_second}', '{self.price_limit}', '{self.provider}')"
