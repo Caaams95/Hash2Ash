@@ -9,7 +9,7 @@ source venv/bin/activate.fish
 ```bash
 cd hash2ash
 pip install -r requirements.txt
-apt install aws-cli terraform -y
+apt install aws-cli terraform bc -y
 ```
 ### Lancer le serveur web
 ```bash
