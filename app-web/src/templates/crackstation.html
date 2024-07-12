@@ -26,6 +26,7 @@
             </div>
         {% endif %}
         <div id="hash-error" class="invalid-feedback"></div>
+        <div id="line-count" class="mt-2"></div> <!-- Ajout pour afficher le nombre de lignes -->
     </div>
     <div class="col-md-12">
         {{ form.wordlist.label(class="form-control-label") }}
@@ -153,6 +154,9 @@
                 } else if (file.size > 200 * 1024 * 1024) { // 200MB
                     errorMessage = 'La taille du fichier doit être inférieure à 200 Mo';
                 }
+
+                // Compte les lignes du fichier
+                countLines(file);
             } else {
                 errorMessage = 'Ce champ est obligatoire';
             }
@@ -171,6 +175,16 @@
             }
         }
 
+        function countLines(file) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                var contents = e.target.result;
+                var lines = contents.split('\n').length;
+                $('#line-count').text(`Number of lines: ${lines}`);
+            };
+            reader.readAsText(file);
+        }
+
         function validateWordlistSelection() {
             var selectedWordlists = $('#crackstation-form input[type="checkbox"][name="wordlist"]:checked').length;
             var customWordlistUploaded = $('#crackstation-form input[type="file"][name="custom_wordlist"]').val() !== '';
@@ -185,6 +199,5 @@
         }
     });
 </script>
-
 
 {% endblock %}
