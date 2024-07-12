@@ -12,7 +12,7 @@ from werkzeug.utils import secure_filename
 import os
 import tempfile
 import json
-
+import stripe
 
 ### Routes
 @app.route('/')
@@ -80,14 +80,12 @@ def save_and_upload_file(file, user_id, file_type):
     return file_url
 
 # Route pour le formulaire de enregistrement d'un hash
-@app.route('/crackstation', methods=['GET', 'POST'])            # Route pour la page de test de hash
+@app.route('/crackstation', methods=['GET', 'POST'])
 @login_required
 def crackstation():
     form = CrackStationForm()
     if form.validate_on_submit():
-        #flash(f'form.wordlist.data', 'info') # Pour debbuger le formulaire
         if current_user.is_authenticated:
-            
             url_hash = save_and_upload_file(form.hash.data, current_user.id_user, 'hash')
 
             form.wordlist.data = None if not form.wordlist.data else json.dumps(form.wordlist.data)
@@ -96,14 +94,13 @@ def crackstation():
             else:
                 url_custom_wordlist = None
             
-            hash = Hashes(hash=url_hash, name=form.name.data ,algorithm=form.algorithm.data, wordlist=form.wordlist.data, custom_wordlist=url_custom_wordlist ,power=form.power.data, provider=form.provider.data, status='In Queue', price=0, fk_id_user=current_user.id_user)
+            hash = Hashes(hash=url_hash, name=form.name.data, algorithm=form.algorithm.data, wordlist=form.wordlist.data, custom_wordlist=url_custom_wordlist, power=form.power.data, provider=form.provider.data, status='In Queue', price=2000, fk_id_user=current_user.id_user)
             db.session.add(hash)
             db.session.commit()
-            #flash(f'Hash added to database', 'info') # Pour debbuger le formulaire
-            flash(f'Your hash crack has been added to the queue', 'success')
-            return redirect(url_for('crackstation'))
+
+            return redirect(url_for('create_checkout_session'))  # Redirect to Stripe checkout session creation
         else:
-            flash(f'You must be logged in to use Crack Station', 'danger')
+            flash('You must be logged in to use Crack Station', 'danger')
             return redirect(url_for('login')) 
 
     return render_template('crackstation.html', title='Crack Station', form=form)
@@ -270,3 +267,45 @@ def reset_token(token):
         flash(f'Your password has been updated !', 'success') ## Si c'est vrai on redirige vers la fonction home
         return redirect(url_for('login'))
     return render_template('resetToken.html', title='Reset Password', form=form)
+
+@app.route('/create-checkout-session', methods=['GET', 'POST'])
+@login_required
+def create_checkout_session():
+    stripe.api_key = 'sk_test_51PbqQGD93W15USiaMasDyqPJtIs1UpgSuLVdPhvxmZ8bYf06KiOils2Qeypque0ZZpjMHqzeQ1LMzHg0ADzjDKby00qL3TIkqb'
+    try:
+        checkout_session = stripe.checkout.Session.create(
+            payment_method_types=['card'],
+            line_items=[
+                {
+                    'price_data': {
+                        'currency': 'usd',
+                        'product_data': {
+                            'name': 'Hash Cracking Service',
+                        },
+                        'unit_amount': 2000,  # Price in cents
+                    },
+                    'quantity': 1,
+                },
+            ],
+            mode='payment',
+            success_url=url_for('payment_success', _external=True) + '?session_id={CHECKOUT_SESSION_ID}',
+            cancel_url=url_for('payment_cancel', _external=True),
+        )
+        return redirect(checkout_session.url, code=303)
+    except Exception as e:
+        return str(e)
+
+@app.route('/payment-success', methods=['GET'])
+def payment_success():
+    session_id = request.args.get('session_id')
+    session = stripe.checkout.Session.retrieve(session_id)
+    # Mettre à jour le statut du hash en "Paid" ou similaire
+    # hash.status = 'Paid'
+    # db.session.commit()
+    flash('Payment successful! Your hash crack is in process.', 'success')
+    return redirect(url_for('account'))
+
+@app.route('/payment-cancel', methods=['GET'])
+def payment_cancel():
+    flash('Payment was canceled. Your hash crack has not been processed.', 'danger')
+    return redirect(url_for('crackstation'))

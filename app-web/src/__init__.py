@@ -7,6 +7,8 @@ from flask_mail import Mail
 from dotenv import load_dotenv
 import psycopg2
 import boto3
+import stripe
+
 load_dotenv()
 
 app = Flask(__name__)
