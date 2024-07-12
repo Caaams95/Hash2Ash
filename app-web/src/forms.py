@@ -582,7 +582,7 @@ class CrackStationForm(FlaskForm):
     )
     provider = SelectField(
         'Provider',
-        choices=[('', 'Choice ...'), ('AWS', 'AWS'), ('AZURE', 'AZURE'), ('GCP', 'GCP')],
+        choices=[('', 'Choice ...'), ('AWS', 'AWS')],
         validators=[DataRequired()],
     )
     power = SelectField(
