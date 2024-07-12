@@ -19,7 +19,11 @@
                     <p class="mb-2">Power: {{hash.power}}</p>
                     <p class="mb-2">Provider: {{hash.provider}}</p>
                     <p class="mb-2">Start Date: {{hash.date_start.strftime("%d/%m/%Y %H:%M:%S")}}</p>
-                    <p class="mb-2">End Date: {{ "None" if not hash.date_end else hash.date_end.strftime("%d/%m/%Y %H:%M:%S") }}</p>
+                    {% for instance in instances %}
+                        {% if instance.id_instance == hash.fk_id_instance %}
+                            <p class="mb-2">End Date: {{ instance.date_shutdown.strftime("%d/%m/%Y %H:%M:%S") if instance.date_shutdown else "None" }}</p>
+                        {%endif%}
+                    {% endfor %}
                     <p class="mb-2"><strong>Result:</strong> <a href="{{hash.result}}">Click Here !</a></p>
                     <p class="mb-2"><strong>Status:</strong> {{hash.status}}</p>
                     <p class="mb-2">Price: {{hash.price}}</p>

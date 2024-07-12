@@ -115,7 +115,8 @@ def crackstation():
 @login_required
 def account():
     hashes = Hashes.query.filter_by(fk_id_user=current_user.id_user).all()
-    return render_template('accountMyhashes.html', title='My Hashes', hashes=hashes)
+    instances = Instances.query.all()
+    return render_template('accountMyhashes.html', title='My Hashes', hashes=hashes, instances=instances)
 
 # Route pour la mise à jour des infos du compte utilisateur
 @app.route('/account/info', methods=['GET', 'POST'])
@@ -168,7 +169,8 @@ def adminpanelUserHashes(id_user):
     user = Users.query.get_or_404(id_user)
     username = user.username
     hashes = Hashes.query.filter_by(fk_id_user=user.id_user).all()
-    return render_template('adminpanelUserHashes.html', title='User Hashes', hashes=hashes, username=username)
+    instances = Instances.query.all()
+    return render_template('adminpanelUserHashes.html', title='User Hashes', hashes=hashes, username=username, instances=instances)
 
 # Route pour la suppression d'un hash
 @app.route('/adminpanel/hash_<int:id_hash>/delete', methods=['POST'])
