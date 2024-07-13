@@ -6,12 +6,12 @@ if [ $# -ne 1 ]; then
     exit 1
 fi
 
-echo "========================== PREGRESS LIVE =========================="
+echo "========================== PROGRESS LIVE =========================="
 
 id_hash=$1
-path_parsed_output_hashcat=/tmp/parsed_output_hashcat.txt
-
+path_parsed_output_hashcat="/tmp/parsed_output_hashcat.txt"
 touch $path_parsed_output_hashcat
+
 while true
 do 
     if [ $(wc -l < $path_parsed_output_hashcat) -gt 5 ]; then 

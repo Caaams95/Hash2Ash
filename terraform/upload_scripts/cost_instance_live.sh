@@ -20,7 +20,7 @@ price=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_P
 
 while true
 do 
-    DATE_END=$(date +'%Y-%m-%d %H:%M:%S')  # Utiliser la date actuelle comme date de fin
+    DATE_END=$(TZ='Europe/Paris' date +'%Y-%m-%d %H:%M:%S')  # Utiliser la date actuelle comme date de fin
 
     echo "========================== CALCUL DU PRIX EN LIVE =========================="
 #    echo id_arch = $id_arch
