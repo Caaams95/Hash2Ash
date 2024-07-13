@@ -19,8 +19,11 @@ aws configure set default.region $REGION
 sudo apt install postgresql -y
 sudo apt-get install hashcat -y
 chmod +x /tmp/go_hashcat.sh
-chmod +x /tmp/get_progress.sh
+chmod +x /tmp/get_progress_live.sh
 chmod +x /tmp/cost_instance_live.sh
-/tmp/get_progress_live.sh $id_hash &
+sleep 1
 /tmp/cost_instance_live.sh $id_arch &
+sleep 1
+/tmp/get_progress_live.sh $id_hash &
+sleep 1
 /tmp/go_hashcat.sh $id_arch $id_hash

@@ -103,7 +103,7 @@ resource "aws_instance" "instance_low" {
 resource "aws_instance" "instance_medium" {
   count         = var.total_instance_count_medium
   ami           = "ami-04b70fa74e45c3917" # Ubuntu
-  instance_type = "c5.xlarge"
+  instance_type = "c7a.4xlarge"
   key_name      = "Cle_test_terraform"
 
   tags = {

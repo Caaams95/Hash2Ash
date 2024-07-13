@@ -74,7 +74,6 @@ def launch_newinstance():
     cursor.close()
     conn.close()
 
-
 def instance_terminate():
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -98,7 +97,7 @@ def instance_terminate():
             subprocess.run(f"./instance-status.sh {id_arch} '{terminate}'", shell=True, check=True)
             print(f"{vert("[LISTENER ACTION]")} ./terraform_stop_instance.sh {id_arch}")
             subprocess.run(f"./terraform_stop_instance.sh {id_arch}", shell=True, check=True)
-            print(f"{vert("[BDD UPDATE]")} ./cost_instance.sh {id_arch}")
+            print(f"{vert("[BDD UPDATE]")} ./cost_instance_total.sh {id_arch}")
             subprocess.run(f"./cost_instance_total.sh {id_arch}", shell=True, check=True)
             
             print(f"{vert("[STATUS]")} Instance {id_arch} : {terminate}.")
@@ -204,6 +203,7 @@ async def main():
             asyncio.create_task(run_in_executor(instance_terminate))
             asyncio.create_task(run_in_executor(hash_notfound))
             asyncio.create_task(run_in_executor(hash_cracked))
+            asyncio.create_task(run_in_executor(hash_expired))
             asyncio.create_task(run_in_executor(hash_processing))
 
             # Pause asynchrone entre chaque incrémentation pour observer l'effet

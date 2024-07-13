@@ -46,7 +46,7 @@ if [ "$power" == "Low" ]; then
     id_arch=$(echo "$latest_instance" | jq -r '.instance_id')
 
 elif [ "$power" == "Medium" ]; then
-    type_instance="c5.xlarge"
+    type_instance="c7a.4xlarge"
     new_count=$((current_count_medium + 1))
     terraform apply -refresh=false -auto-approve -var="total_instance_count_low=$current_count_low" -var="total_instance_count_medium=$new_count" -var="total_instance_count_high=$current_count_high"
     # Récupérer les détails des instances créées

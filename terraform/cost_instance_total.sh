@@ -19,7 +19,7 @@ DATE_END=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$D
 
 price=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -t -c "SELECT price_hash2ash FROM public.instances WHERE id_arch='$id_arch';" | xargs)
 
-echo "========================== CALCUL DU PRIX =========================="
+echo "========================== CALCUL DU PRIX FINAL =========================="
 echo id_arch = $id_arch
 echo id_instance = $id_instance
 echo DATE_START = $DATE_START
