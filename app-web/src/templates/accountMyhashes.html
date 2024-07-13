@@ -2,9 +2,10 @@
 {% block content %}
 <div class="content-section mb-4">
     <legend class="border-bottom mb-4">Hashes History</legend>
+    <small>{{hash_count}} {{'hashes' if hash_count > 1 else 'hash'}}</small>
     <div class="accordion" id="accordionPanelsStayOpenExample">
         {% if hashes %}
-            {% for hash in hashes %}
+            {% for hash in hashes.items %}
             <div class="accordion-item">
                 <h2 class="accordion-header">
                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapse{{hash.id_hash}}" aria-expanded="true" aria-controls="panelsStayOpen-collapseOne">
@@ -87,5 +88,18 @@
             </div>
         {% endif %}
     </div>
+    <ul class="pagination justify-content-center mt-3">
+        {% for page_num in hashes.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+            {% if page_num %}
+                {% if hashes.page == page_num %}
+                    <li class="page-item active"><a class="page-link bg-dark text-light border-dark-subtle" href="{{ url_for('account', page=page_num) }}">{{ page_num }}</a></li>
+                {% else %}
+                    <li class="page-item"><a class="page-link text-dark border-dark-subtle" href="{{ url_for('account', page=page_num) }}">{{ page_num }}</a></li>
+                {% endif %}
+            {% else %}
+                <li class="page-item page-link text-dark border-dark-subtle">...</li>
+            {% endif %}
+        {% endfor %}
+    </ul>
 </div>
 {% endblock %}

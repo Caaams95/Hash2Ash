@@ -110,13 +110,16 @@ def crackstation():
 
 
 # Route pour la page profil avec les hashes de l'utilisateur
-@app.route('/account', methods=['GET', 'POST'])
-@app.route('/account/myhashes', methods=['GET', 'POST'])
+@app.route('/account')
+@app.route('/account/myhashes')
 @login_required
 def account():
-    hashes = Hashes.query.filter_by(fk_id_user=current_user.id_user).all()
+    page = request.args.get('page', 1, type=int)
     instances = Instances.query.all()
-    return render_template('accountMyhashes.html', title='My Hashes', hashes=hashes, instances=instances)
+    hash_count = Hashes.query.filter_by(fk_id_user=current_user.id_user).count()
+    hashes = Hashes.query.filter_by(fk_id_user=current_user.id_user).order_by(Hashes.id_hash.desc()).paginate(page=page, per_page=10)
+
+    return render_template('accountMyhashes.html', title='My Hashes', hashes=hashes, instances=instances, hash_count=hash_count)
 
 # Route pour la mise à jour des infos du compte utilisateur
 @app.route('/account/info', methods=['GET', 'POST'])
@@ -133,7 +136,6 @@ def accountInfo():
         form.email.data = current_user.email
     return render_template('accountInfo.html', title='My Info', form=form)
 
-# Route pour la mise à jour du mot de passe en etant admin
 @app.route('/adminpanel', methods=['GET', 'POST'])
 @login_required
 def adminpanel():
@@ -167,10 +169,13 @@ def adminpanelUserHashes(id_user):
         flash('You are not authorized to access this page', 'danger')
         return redirect(url_for('home'))
     user = Users.query.get_or_404(id_user)
+    page = request.args.get('page', 1, type=int)
     username = user.username
-    hashes = Hashes.query.filter_by(fk_id_user=user.id_user).all()
+    #hashes = Hashes.query.filter_by(fk_id_user=user.id_user).all()
+    hash_count = Hashes.query.filter_by(fk_id_user=user.id_user).count()
+    hashes = Hashes.query.filter_by(fk_id_user=user.id_user).order_by(Hashes.id_hash.desc()).paginate(page=page, per_page=10)
     instances = Instances.query.all()
-    return render_template('adminpanelUserHashes.html', title='User Hashes', hashes=hashes, username=username, instances=instances)
+    return render_template('adminpanelUserHashes.html', title='User Hashes', hashes=hashes, username=username, instances=instances, hash_count=hash_count, id_user=id_user)
 
 # Route pour la suppression d'un hash
 @app.route('/adminpanel/hash_<int:id_hash>/delete', methods=['POST'])
@@ -182,7 +187,7 @@ def delete_hash(id_hash):
     db.session.delete(hash)
     db.session.commit()
     flash('The hash has been deleted !', 'success')
-    if request.referrer.endswith('/account/myhashes'):
+    if '/account/myhashes' in request.referrer:
         return redirect(url_for('account'))
     else:
         return redirect(url_for('adminpanelUserHashes', id_user=hash.fk_id_user))
@@ -199,7 +204,7 @@ def stop_hash(id_hash):
     hash.status = 'Terminate'
     db.session.commit()
     flash('The hash has been stopped !', 'success')
-    if request.referrer.endswith('/account/myhashes'):
+    if '/account/myhashes' in request.referrer:
         return redirect(url_for('account'))
     else:
         return redirect(url_for('adminpanelUserHashes', id_user=hash.fk_id_user))
