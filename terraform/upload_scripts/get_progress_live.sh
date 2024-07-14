@@ -18,7 +18,7 @@ do
         progress=$(tac $path_parsed_output_hashcat | grep Progress | head -n 5 | sed -ne '2p' | cut -d: -f 2 | xargs)
         time_estimated=$(tac $path_parsed_output_hashcat | grep Estimated | head -n 5 | sed -ne '2p' | awk -F '[()]' '/Time.Estimated...:/ {print $2}' | xargs)
         hash_per_second=$(tac $path_parsed_output_hashcat | grep Speed |  head -n 5 | sed -ne '2p' | cut -d'(' -f 1 | cut -d : -f2 | xargs)
-        cat /tmp/log_hashcat.txt
+        tail -n 20 /tmp/log_hashcat.txt
 
         echo "[PROGESS] progress id_hash $id_hash = $progress"
 
@@ -28,3 +28,5 @@ do
     fi
     sleep 5
 done
+
+
