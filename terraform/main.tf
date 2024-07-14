@@ -87,6 +87,11 @@ resource "aws_instance" "instance_low" {
     destination = "/tmp/cost_instance_live.sh"
   }
 
+    provisioner "file" {
+    source      = "./upload_scripts/stop_export_hashcat.sh"
+    destination = "/tmp/stop_export_hashcat.sh"
+  }
+
   provisioner "file" {
     source      = "./upload_scripts/.env_script"
     destination = "/tmp/.env_script"
@@ -130,10 +135,16 @@ resource "aws_instance" "instance_medium" {
     source      = "./upload_scripts/cost_instance_live.sh"
     destination = "/tmp/cost_instance_live.sh"
   }
-    provisioner "file" {
+  provisioner "file" {
+    source      = "./upload_scripts/stop_export_hashcat.sh"
+    destination = "/tmp/stop_export_hashcat.sh"
+  }
+
+  provisioner "file" {
     source      = "./upload_scripts/.env_script"
     destination = "/tmp/.env_script"
   }
+  
     connection {
     type        = "ssh"
     user        = "ubuntu"
@@ -173,6 +184,10 @@ resource "aws_instance" "instance_high" {
   provisioner "file" {
     source      = "./upload_scripts/cost_instance_live.sh"
     destination = "/tmp/cost_instance_live.sh"
+  }
+  provisioner "file" {
+    source      = "./upload_scripts/stop_export_hashcat.sh"
+    destination = "/tmp/stop_export_hashcat.sh"
   }
 
     provisioner "file" {
