@@ -15,7 +15,7 @@ WORDLISTS="/tmp/wordlist.txt"
 id_instance=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -t -c "SELECT fk_id_instance FROM public.hashes WHERE id_hash = '$id_hash';" | xargs)
 id_arch=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -t -c "SELECT id_arch FROM public.instances WHERE id_instance = '$id_instance';" | xargs)
 
-ZIP_FILE="${SESSION_NAME}_idhash_${id_hash}_idarch_${id_archRe}.zip"
+ZIP_FILE="${SESSION_NAME}_idhash_${id_hash}_idarch_${id_arch}.zip"
 EXPORT_FOLDER="/tmp/session_folder"
 
 
