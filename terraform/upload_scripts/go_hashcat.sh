@@ -16,8 +16,8 @@ path_hash="/tmp/hash.txt"
 path_result="/tmp/result-$id_arch.txt"
 
 temp_wordlist_file="/tmp/wordlist_temp.txt"
-final_wordlist_file="/tmp/wordlist.txt"
 custom_worldist_file="/tmp/custom_worldist_file.txt"
+final_wordlist_file="/tmp/wordlist.txt"
 
 path_parsed_output_hashcat="/tmp/parsed_output_hashcat.txt"
 log_hashcat="/tmp/log_hashcat.txt"
@@ -104,7 +104,6 @@ hashcat $path_hash $final_wordlist_file $algorithm --session=session_hash2ash --
 # Envoyer le result en BDD
 ## Vérifie le code de sortie de hashcat
 HASHCAT_EXIT_CODE=$?
-line_count=1 # pour eviter une erreur sur le grep suivant en cas de kill
 line_count=$(wc -l < path_result)
     # 0 = Not found
     # 1 = Cracked

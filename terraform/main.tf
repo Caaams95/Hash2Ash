@@ -70,32 +70,44 @@ resource "aws_instance" "instance_low" {
     aws_security_group.allow_ssh.id,
     aws_security_group.allow_all.id
   ]
-  provisioner "file" {
-    source      = "./upload_scripts/ssh_commande_start.sh"
-    destination = "/tmp/ssh_commande_start.sh"
+    provisioner "file" {
+    source      = "./upload_scripts/.env_script"
+    destination = "/tmp/.env_script"
   }
   provisioner "file" {
-    source      = "./upload_scripts/go_hashcat.sh"
-    destination = "/tmp/go_hashcat.sh"
+    source      = "./upload_scripts/cost_instance_live.sh"
+    destination = "/tmp/cost_instance_live.sh"
   }
   provisioner "file" {
     source      = "./upload_scripts/get_progress_live.sh"
     destination = "/tmp/get_progress_live.sh"
   }
   provisioner "file" {
-    source      = "./upload_scripts/cost_instance_live.sh"
-    destination = "/tmp/cost_instance_live.sh"
+    source      = "./upload_scripts/go_hashcat.sh"
+    destination = "/tmp/go_hashcat.sh"
   }
-
+  provisioner "file" {
+    source      = "./upload_scripts/resume_hashcat.sh"
+    destination = "/tmp/resume_hashcat.sh"
+  }
+  provisioner "file" {
+    source      = "./upload_scripts/ssh_commande_start.sh"
+    destination = "/tmp/ssh_commande_start.sh"
+  }
+  provisioner "file" {
+    source      = "./upload_scripts/ssh_commande_resume.sh"
+    destination = "/tmp/ssh_commande_resume.sh"
+  }
     provisioner "file" {
     source      = "./upload_scripts/stop_export_hashcat.sh"
     destination = "/tmp/stop_export_hashcat.sh"
   }
 
   provisioner "file" {
-    source      = "./upload_scripts/.env_script"
-    destination = "/tmp/.env_script"
+    source      = "./upload_scripts/stop_export_hashcat.sh"
+    destination = "/tmp/stop_export_hashcat.sh"
   }
+
   connection {
     type        = "ssh"
     user        = "ubuntu"
@@ -119,32 +131,44 @@ resource "aws_instance" "instance_medium" {
     aws_security_group.allow_ssh.id,
     aws_security_group.allow_all.id
   ]
-  provisioner "file" {
-    source      = "./upload_scripts/ssh_commande_start.sh"
-    destination = "/tmp/ssh_commande_start.sh"
-  }
-  provisioner "file" {
-    source      = "./upload_scripts/go_hashcat.sh"
-    destination = "/tmp/go_hashcat.sh"
-  }
-  provisioner "file" {
-    source      = "./upload_scripts/get_progress_live.sh"
-    destination = "/tmp/get_progress_live.sh"
+    provisioner "file" {
+    source      = "./upload_scripts/.env_script"
+    destination = "/tmp/.env_script"
   }
   provisioner "file" {
     source      = "./upload_scripts/cost_instance_live.sh"
     destination = "/tmp/cost_instance_live.sh"
   }
   provisioner "file" {
+    source      = "./upload_scripts/get_progress_live.sh"
+    destination = "/tmp/get_progress_live.sh"
+  }
+  provisioner "file" {
+    source      = "./upload_scripts/go_hashcat.sh"
+    destination = "/tmp/go_hashcat.sh"
+  }
+  provisioner "file" {
+    source      = "./upload_scripts/resume_hashcat.sh"
+    destination = "/tmp/resume_hashcat.sh"
+  }
+  provisioner "file" {
+    source      = "./upload_scripts/ssh_commande_start.sh"
+    destination = "/tmp/ssh_commande_start.sh"
+  }
+  provisioner "file" {
+    source      = "./upload_scripts/ssh_commande_resume.sh"
+    destination = "/tmp/ssh_commande_resume.sh"
+  }
+    provisioner "file" {
     source      = "./upload_scripts/stop_export_hashcat.sh"
     destination = "/tmp/stop_export_hashcat.sh"
   }
 
   provisioner "file" {
-    source      = "./upload_scripts/.env_script"
-    destination = "/tmp/.env_script"
+    source      = "./upload_scripts/stop_export_hashcat.sh"
+    destination = "/tmp/stop_export_hashcat.sh"
   }
-  
+
     connection {
     type        = "ssh"
     user        = "ubuntu"
@@ -169,31 +193,44 @@ resource "aws_instance" "instance_high" {
     aws_security_group.allow_ssh.id,
     aws_security_group.allow_all.id
   ]
-  provisioner "file" {
-    source      = "./upload_scripts/ssh_commande_start.sh"
-    destination = "/tmp/ssh_commande_start.sh"
-  }
     provisioner "file" {
-    source      = "./upload_scripts/go_hashcat.sh"
-    destination = "/tmp/go_hashcat.sh"
-  }
-    provisioner "file" {
-    source      = "./upload_scripts/get_progress_live.sh"
-    destination = "/tmp/get_progress_live.sh"
+    source      = "./upload_scripts/.env_script"
+    destination = "/tmp/.env_script"
   }
   provisioner "file" {
     source      = "./upload_scripts/cost_instance_live.sh"
     destination = "/tmp/cost_instance_live.sh"
   }
   provisioner "file" {
+    source      = "./upload_scripts/get_progress_live.sh"
+    destination = "/tmp/get_progress_live.sh"
+  }
+  provisioner "file" {
+    source      = "./upload_scripts/go_hashcat.sh"
+    destination = "/tmp/go_hashcat.sh"
+  }
+  provisioner "file" {
+    source      = "./upload_scripts/resume_hashcat.sh"
+    destination = "/tmp/resume_hashcat.sh"
+  }
+  provisioner "file" {
+    source      = "./upload_scripts/ssh_commande_start.sh"
+    destination = "/tmp/ssh_commande_start.sh"
+  }
+  provisioner "file" {
+    source      = "./upload_scripts/ssh_commande_resume.sh"
+    destination = "/tmp/ssh_commande_resume.sh"
+  }
+    provisioner "file" {
     source      = "./upload_scripts/stop_export_hashcat.sh"
     destination = "/tmp/stop_export_hashcat.sh"
   }
 
-    provisioner "file" {
-    source      = "./upload_scripts/.env_script"
-    destination = "/tmp/.env_script"
+  provisioner "file" {
+    source      = "./upload_scripts/stop_export_hashcat.sh"
+    destination = "/tmp/stop_export_hashcat.sh"
   }
+
     connection {
     type        = "ssh"
     user        = "ubuntu"
