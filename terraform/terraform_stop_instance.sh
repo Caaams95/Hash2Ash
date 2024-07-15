@@ -32,7 +32,6 @@ aws ec2 terminate-instances --instance-ids "$instance_id"
 # Mettre à jour le statut dans la base de données
 status_shutdown="Terminate"
 PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -c "UPDATE public.instances SET date_shutdown=(now() at time zone 'Europe/Paris') WHERE id_arch='$instance_id';"
-#PGPASSWORD='C5yAn39f8Tm7U13z' psql -U userHash2ash -h db-hash2ash-prod.c3m2i44y2jm0.us-east-1.rds.amazonaws.com -p 5432 -d hash2ash -c "UPDATE public.instances SET status='$status_shutdown' WHERE id_arch='$instance_id';"
 
 # Afficher le succès de la suppression de l'instance
 echo "[INSTANCE ACTION] Arret de l'instance $instance_id terminé"

@@ -63,5 +63,5 @@ echo "[SSH COMMAND - $id_arch] /tmp/get_progress_live.sh $id_hash &"
 echo "[SSH COMMAND - $id_arch] sleep 1"
 sleep 1
 
-echo "[SSH COMMAND - $id_arch] /tmp/go_hashcat.sh $id_arch $id_hash"
+echo "[SSH COMMAND - $id_arch] /tmp/resume_hashcat.sh $id_arch $id_hash"
 /tmp/go_hashcat.sh $id_arch $id_hash

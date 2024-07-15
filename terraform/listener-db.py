@@ -41,6 +41,10 @@ inqueue     = "In Queue"
 initialisation =  "Initialisation"
 error       = "Error"
 expired     = "Expired"
+stopped     = "Stopped"
+want_stop   = "Want Stop"
+exporting   = "Exporting"
+resume      = "Resume"
 
 def get_db_connection():
     return psycopg2.connect(**db_config)
@@ -54,7 +58,7 @@ def launch_newinstance():
     init_count = cursor.fetchone()[0]
 
     if init_count == 0:
-        # Sélectionner le plus petit id_hash avec le statut 'inqueue'
+        # Sélectionner le plus petit id_hash avec le statut 'In Queue'
         cursor.execute(f"SELECT id_hash FROM public.hashes WHERE status='{inqueue}' ORDER BY id_hash ASC LIMIT 1;")
         result = cursor.fetchone()
         
@@ -74,20 +78,46 @@ def launch_newinstance():
     cursor.close()
     conn.close()
 
+def resume_newinstance():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Vérifier s'il y a des statuts 'Initialisation'
+    cursor.execute(f"SELECT COUNT(*) FROM public.hashes WHERE status = '{initialisation}';")
+    init_count = cursor.fetchone()[0]
+
+    if init_count == 0:
+        # Sélectionner le plus petit id_hash avec le statut 'In Queue'
+        cursor.execute(f"SELECT id_hash FROM public.hashes WHERE status='{resume}' ORDER BY id_hash ASC LIMIT 1;")
+        result = cursor.fetchone()
+        
+        if result:
+            id_hash = result[0]
+            # Terraform en cours ? j'attends
+            print(f"{vert("[ANALYSE BDD]")} id_hash {id_hash} détecté.")
+            print(f"{vert("[ACTION]")} Création d'instance 'Resume' pour id_hash : {id_hash}.")
+            subprocess.run(f"./terraform_resume_instance.sh {id_hash}", shell=True, check=True)
+    else:
+        print(f"{jaune("[ANALYSE BDD]")} Impossible de lancer de nouvelle instance, {init_count} Initialisation d'instance est déjà en cours.")
+        print(f"{jaune("[ANALYSE BDD]")} Veuillez patienter...")
+        #print(f"[*] id hash {id_hash} en attente")
+
+    cursor.close()
+    conn.close()
+
+
 def instance_terminate():
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute(f"""
         SELECT id_arch FROM public.instances
         LEFT JOIN public.hashes ON public.hashes.fk_id_instance = public.instances.id_instance
-        WHERE (public.hashes.result IS NOT NULL
-        AND public.instances.status != '{terminate}')
-        OR (public.hashes.status = '{error}'
-        AND public.instances.status != '{terminate}')
-        OR (public.hashes.status = '{expired}'
-        AND public.instances.status != '{terminate}')
-        OR (public.hashes.status = '{terminate}'
-        AND public.instances.status != '{terminate}');
+        WHERE public.instances.status != '{terminate}'
+        AND (public.hashes.result IS NOT NULL
+        OR public.hashes.status = '{error}'
+        OR public.hashes.status = '{expired}'
+        OR public.hashes.status = '{stopped}'
+        );
     """)    
     results = cursor.fetchall()
     if results:
@@ -98,9 +128,31 @@ def instance_terminate():
             print(f"{vert("[LISTENER ACTION]")} ./terraform_stop_instance.sh {id_arch}")
             subprocess.run(f"./terraform_stop_instance.sh {id_arch}", shell=True, check=True)
             print(f"{vert("[BDD UPDATE]")} ./cost_instance_total.sh {id_arch}")
-            subprocess.run(f"./cost_instance_total.sh {id_arch}", shell=True, check=True)
-            
+            subprocess.run(f"./cost_instance_total.sh {id_arch}", shell=True, check=True)           
             print(f"{vert("[STATUS]")} Instance {id_arch} : {terminate}.")
+    cursor.close()
+    conn.close()
+
+
+def instance_want_stop():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(f"""
+        SELECT id_hash FROM public.hashes
+        LEFT JOIN public.instances ON public.instances.id_instance = public.hashes.fk_id_instance
+        WHERE public.instances.status != '{terminate}'
+        AND public.hashes.status = '{want_stop}'
+        ;
+    """)    
+    results = cursor.fetchall()
+    if results:
+        for result in results:
+            id_hash = result[0]
+            print(f"{vert("[LISTENER ACTION]")} ./hash_status.sh {id_hash} {exporting}")
+            subprocess.run(f"./hash_status.sh {id_hash} '{exporting}'", shell=True, check=True)
+            print(f"{vert("[LISTENER ACTION]")} ./hashcat_stop.sh {id_hash}")
+            subprocess.run(f"./hashcat_stop.sh {id_hash}", shell=True, check=True)        
+            print(f"{vert("[STATUS]")} Hash {id_hash} : {exporting}.")
     cursor.close()
     conn.close()
 
@@ -108,17 +160,17 @@ def hash_cracked():
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute(f"""
-        SELECT id_arch FROM public.instances
-        LEFT JOIN public.hashes ON public.hashes.fk_id_instance=public.instances.id_instance
+        SELECT id_hash FROM public.hashes
         WHERE public.hashes.result IS NOT NULL
-        AND public.hashes.status != '{cracked}';
+        AND public.hashes.status != '{cracked}'
+        ;
     """)
     results = cursor.fetchall()
     if results:
         for result in results:
-            id_arch = result[0]
-            subprocess.run(f"./hash-status.sh {id_arch} '{cracked}'", shell=True, check=True)
-            print(f"{vert("[STATUS]")} Instance {id_arch} : Hash {cracked}.")
+            id_hash = result[0]
+            subprocess.run(f"./hash_status.sh {id_hash} '{cracked}'", shell=True, check=True)
+            print(f"{vert("[STATUS]")} Instance {id_hash} : Hash {cracked}.")
     cursor.close()
     conn.close()
 
@@ -129,15 +181,15 @@ def hash_expired():
         SELECT id_hash FROM public.hashes
         LEFT JOIN public.instances ON public.instances.id_instance = public.hashes.fk_id_instance
         WHERE public.hashes.price_limit >= public.instances.price_total 
-        AND public.hashes.status = '{expired}' ;
+        AND public.hashes.status != '{expired}' ;
     """)    
 
     results = cursor.fetchall()
     if results:
         for result in results:
-            id_arch = result[0]
-            subprocess.run(f"./hash-status.sh {id_arch} '{expired}'", shell=True, check=True)
-            print(f"{vert("[STATUS]")} Instance {id_arch} : Hash {expired}.")
+            id_hash = result[0]
+            subprocess.run(f"./hash_status.sh {id_hash} '{expired}'", shell=True, check=True)
+            print(f"{vert("[STATUS]")} Instance {id_hash} : Hash {expired}.")
     cursor.close()
     conn.close()
 
@@ -183,7 +235,7 @@ def hash_processing():
     if results:
         for result in results:
             id_arch = result[0]
-            subprocess.run(f"./hash-status.sh {id_arch} '{processing}'", shell=True, check=True)
+            subprocess.run(f"./hash_status.sh {id_arch} '{processing}'", shell=True, check=True)
             print(f"{vert("[STATUS]")} Instance {id_arch} : Hash {processing}.")
     cursor.close()
     conn.close()
@@ -200,14 +252,16 @@ async def main():
         while True:
             # Créer des tâches asynchrones pour les tâches longues
             asyncio.create_task(run_in_executor(launch_newinstance))
+            asyncio.create_task(run_in_executor(resume_newinstance))
             asyncio.create_task(run_in_executor(instance_terminate))
             asyncio.create_task(run_in_executor(hash_notfound))
             asyncio.create_task(run_in_executor(hash_cracked))
             asyncio.create_task(run_in_executor(hash_expired))
             asyncio.create_task(run_in_executor(hash_processing))
+            asyncio.create_task(run_in_executor(instance_want_stop))
 
             # Pause asynchrone entre chaque incrémentation pour observer l'effet
-            await asyncio.sleep(5)
+            await asyncio.sleep(10)
     except asyncio.CancelledError:
         print("Fermeture du Listener...")
     except KeyboardInterrupt:

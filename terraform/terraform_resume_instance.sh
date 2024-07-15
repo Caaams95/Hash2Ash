@@ -40,7 +40,7 @@ if [ "$power" == "Low" ]; then
     # Trouver les détails de la dernière instance créée
     latest_instance=$(echo "$instances_details" | jq -c ".[-1]")
 
-    # Récupérer l'adresse IP publique et le nom de la nouvelle instance
+    # Récupérerqsd l'adresse IP publique et le nom de la nouvelle instance
     instance_ip=$(echo "$latest_instance" | jq -r '.public_ip')
     instance_name=$(echo "$latest_instance" | jq -r '.name')
     id_arch=$(echo "$latest_instance" | jq -r '.instance_id')
@@ -102,8 +102,8 @@ if [ "$is_processed" -le 0 ]; then
 
     # Exécuter des commandes sur l'instance créée (exemple avec SSH)
     ssh -o "StrictHostKeyChecking=no" -i /home/cams/.ssh/Cle_test_terraform.pem ubuntu@"$instance_ip" \
-        "chmod +x /tmp/ssh_commande_start.sh && \
-        /tmp/ssh_commande_start.sh $id_arch $id_hash" 
+        "chmod +x /tmp/ssh_commande_resume.sh && \
+        /tmp/ssh_commande_resume.sh $id_arch $id_hash" 
 fi
 
 # Afficher le succès de la création de l'instance
