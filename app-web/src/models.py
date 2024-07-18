@@ -2,6 +2,7 @@ from datetime import datetime
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer # Importation de la classe Serializer pour générer des tokens
 from src import db, login_manager, app # Importation de l'instance de la base de données et de l'instance de login_manager
 from flask_login import UserMixin   # Importation de la classe UserMixin qui contient les méthodes de base pour gérer les utilisateurs
+from itsdangerous.url_safe import URLSafeTimedSerializer as Serializer
 
 @login_manager.user_loader # Fonction pour charger un utilisateur 
 def get_user(id_user):

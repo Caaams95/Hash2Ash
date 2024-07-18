@@ -13,6 +13,8 @@ import os
 import tempfile
 import json
 import stripe
+import datetime
+from apscheduler.schedulers.background import BackgroundScheduler
 
 ### Routes
 @app.route('/')
@@ -268,44 +270,77 @@ def reset_token(token):
         return redirect(url_for('login'))
     return render_template('resetToken.html', title='Reset Password', form=form)
 
+stripe.api_key = 'sk_test_51PbqQGD93W15USiaMasDyqPJtIs1UpgSuLVdPhvxmZ8bYf06KiOils2Qeypque0ZZpjMHqzeQ1LMzHg0ADzjDKby00qL3TIkqb'
+
+# Créer un produit
+product = stripe.Product.create(
+    name="Daily Subscription",
+)
+
+# Créer un prix récurrent pour le produit
+price = stripe.Price.create(
+    unit_amount=2000,  # Montant en cents
+    currency="usd",
+    recurring={"interval": "day"},
+    product=product.id,
+)
+
+
+scheduler = BackgroundScheduler()
+scheduler.start()
+
+def refund_subscription(subscription_id):
+    # Calculer le montant à rembourserv
+    refund_amount = 1000  # Par exemple, montant en centimes
+    stripe.Refund.create(
+        charge=subscription_id,
+        amount=refund_amount,
+    )
+    # Mettre à jour le statut de l'abonnement (à implémenter)
+
+def check_subscriptions():
+    subscriptions = get_all_active_subscriptions()
+    for subscription in subscriptions:
+        start_time = subscription['start_time']
+        if (datetime.datetime.now() - start_time).days >= 1:
+            # Calculer la différence et rembourser
+            refund_subscription(subscription['subscription_id'])
+            # Mettre à jour le statut de l'abonnement
+            update_subscription_status(subscription['subscription_id'], 'refunded')
+
+scheduler.add_job(func=check_subscriptions, trigger="interval", hours=24)
+
 @app.route('/create-checkout-session', methods=['GET', 'POST'])
 @login_required
 def create_checkout_session():
     stripe.api_key = 'sk_test_51PbqQGD93W15USiaMasDyqPJtIs1UpgSuLVdPhvxmZ8bYf06KiOils2Qeypque0ZZpjMHqzeQ1LMzHg0ADzjDKby00qL3TIkqb'
+    
     try:
         checkout_session = stripe.checkout.Session.create(
             payment_method_types=['card'],
             line_items=[
                 {
-                    'price_data': {
-                        'currency': 'usd',
-                        'product_data': {
-                            'name': 'Hash Cracking Service',
-                        },
-                        'unit_amount': 2000,  # Price in cents
-                    },
+                    'price': 'price_1Pe1dTD93W15USiaWF2v9ETM',  # Remplacez par l'ID de votre prix récurrent
                     'quantity': 1,
                 },
             ],
-            mode='payment',
+            mode='subscription',
             success_url=url_for('payment_success', _external=True) + '?session_id={CHECKOUT_SESSION_ID}',
             cancel_url=url_for('payment_cancel', _external=True),
         )
         return redirect(checkout_session.url, code=303)
     except Exception as e:
         return str(e)
-
+    
 @app.route('/payment-success', methods=['GET'])
 def payment_success():
     session_id = request.args.get('session_id')
     session = stripe.checkout.Session.retrieve(session_id)
-    # Mettre à jour le statut du hash en "Paid" ou similaire
-    # hash.status = 'Paid'
-    # db.session.commit()
-    flash('Payment successful! Your hash crack is in process.', 'success')
+    # Mettre à jour le statut de l'abonnement en "Paid" ou similaire
+    flash('Payment successful! Your daily subscription is active.', 'success')
     return redirect(url_for('account'))
 
 @app.route('/payment-cancel', methods=['GET'])
 def payment_cancel():
-    flash('Payment was canceled. Your hash crack has not been processed.', 'danger')
+    flash('Payment was canceled. Your subscription has not been activated.', 'danger')
     return redirect(url_for('crackstation'))
