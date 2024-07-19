@@ -285,42 +285,20 @@ price = stripe.Price.create(
     product=product.id,
 )
 
-
-scheduler = BackgroundScheduler()
-scheduler.start()
-
-def refund_subscription(subscription_id):
-    # Calculer le montant à rembourserv
-    refund_amount = 1000  # Par exemple, montant en centimes
-    stripe.Refund.create(
-        charge=subscription_id,
-        amount=refund_amount,
-    )
-    # Mettre à jour le statut de l'abonnement (à implémenter)
-
-def check_subscriptions():
-    subscriptions = get_all_active_subscriptions()
-    for subscription in subscriptions:
-        start_time = subscription['start_time']
-        if (datetime.datetime.now() - start_time).days >= 1:
-            # Calculer la différence et rembourser
-            refund_subscription(subscription['subscription_id'])
-            # Mettre à jour le statut de l'abonnement
-            update_subscription_status(subscription['subscription_id'], 'refunded')
-
-scheduler.add_job(func=check_subscriptions, trigger="interval", hours=24)
-
 @app.route('/create-checkout-session', methods=['GET', 'POST'])
 @login_required
 def create_checkout_session():
     stripe.api_key = 'sk_test_51PbqQGD93W15USiaMasDyqPJtIs1UpgSuLVdPhvxmZ8bYf06KiOils2Qeypque0ZZpjMHqzeQ1LMzHg0ADzjDKby00qL3TIkqb'
     
-    try:
+    if current_user.is_authenticated:
+        prices = stripe.Price.list()
+        price_id = prices.data[0].id
+        
         checkout_session = stripe.checkout.Session.create(
             payment_method_types=['card'],
             line_items=[
                 {
-                    'price': 'price_1Pe1dTD93W15USiaWF2v9ETM',  # Remplacez par l'ID de votre prix récurrent
+                    'price': price_id,
                     'quantity': 1,
                 },
             ],
@@ -328,10 +306,20 @@ def create_checkout_session():
             success_url=url_for('payment_success', _external=True) + '?session_id={CHECKOUT_SESSION_ID}',
             cancel_url=url_for('payment_cancel', _external=True),
         )
+        
+        refund_subscription()
+        
         return redirect(checkout_session.url, code=303)
-    except Exception as e:
-        return str(e)
+    else:
+        return redirect(url_for('login'))
+
+def refund_subscription():
+        charges = stripe.Charge.list(limit=1)
+        if charges.data:
+            last_charge_id = charges.data[0].id
+            refund = stripe.Refund.create(charge=last_charge_id)
     
+
 @app.route('/payment-success', methods=['GET'])
 def payment_success():
     session_id = request.args.get('session_id')
