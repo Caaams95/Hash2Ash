@@ -25,6 +25,7 @@ pkill -f "/tmp/get_progress*"
 pkill -f "/tmp/cost_*"
 pkill -f "hashcat /tmp*"
 
+sleep 10
 # Export de la session vers S3
 mkdir "$EXPORT_FOLDER"
 

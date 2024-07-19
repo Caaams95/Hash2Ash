@@ -43,8 +43,9 @@ error       = "Error"
 expired     = "Expired"
 stopped     = "Stopped"
 want_stop   = "Want Stop"
-exporting   = "Exporting"
+want_resume = "Want Resume"
 resume      = "Resume"
+exporting   = "Exporting"
 
 def get_db_connection():
     return psycopg2.connect(**db_config)
@@ -88,7 +89,7 @@ def resume_newinstance():
 
     if init_count == 0:
         # Sélectionner le plus petit id_hash avec le statut 'In Queue'
-        cursor.execute(f"SELECT id_hash FROM public.hashes WHERE status='{resume}' ORDER BY id_hash ASC LIMIT 1;")
+        cursor.execute(f"SELECT id_hash FROM public.hashes WHERE status='{want_resume}' ORDER BY id_hash ASC LIMIT 1;")
         result = cursor.fetchone()
         
         if result:
