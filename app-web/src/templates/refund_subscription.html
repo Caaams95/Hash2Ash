@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Request a Refund</h1>
+        <p>If you would like to request a refund for your previous payments, please click the button below.</p>
+        <form action="{{ url_for('refund_subscription') }}" method="post">
+            <button type="submit" class="btn btn-primary">Request Refund</button>
+        </form>
+        <p><a href="{{ url_for('account') }}">Back to My Account</a></p>
+    </div>
+</body>
+</html>

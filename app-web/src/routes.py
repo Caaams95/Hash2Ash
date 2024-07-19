@@ -307,26 +307,39 @@ def create_checkout_session():
             cancel_url=url_for('payment_cancel', _external=True),
         )
         
-        refund_subscription()
-        
         return redirect(checkout_session.url, code=303)
     else:
         return redirect(url_for('login'))
 
-def refund_subscription():
-        charges = stripe.Charge.list(limit=1)
-        if charges.data:
-            last_charge_id = charges.data[0].id
-            refund = stripe.Refund.create(charge=last_charge_id)
-    
-
+# Route pour le succès du paiement
 @app.route('/payment-success', methods=['GET'])
 def payment_success():
     session_id = request.args.get('session_id')
     session = stripe.checkout.Session.retrieve(session_id)
     # Mettre à jour le statut de l'abonnement en "Paid" ou similaire
     flash('Payment successful! Your daily subscription is active.', 'success')
-    return redirect(url_for('account'))
+    # Redirection après succès de paiement, avec possibilité de remboursement des paiements précédents
+    return redirect(url_for('refund_subscription'))
+
+# Route pour le remboursement de l'abonnement
+@app.route('/refund-subscription', methods=['GET', 'POST'])
+@login_required
+def refund_subscription():
+    if request.method == 'POST':
+        try:
+            # Récupérer les charges de l'utilisateur
+            charges = stripe.Charge.list(customer=current_user.stripe_customer_id, limit=10)
+            # Filtrer pour obtenir les charges valides à rembourser
+            charges_to_refund = [charge for charge in charges.data if charge.paid and not charge.refunded]
+            # Rembourser les charges si disponibles
+            for charge in charges_to_refund:
+                refund = stripe.Refund.create(charge=charge.id)
+            flash('Previous payments have been successfully refunded.', 'success')
+        except Exception as e:
+            flash('Thanks you :)', 'success')
+        return redirect(url_for('account'))
+    return render_template('refund_subscription.html', title='Refund Subscription')
+
 
 @app.route('/payment-cancel', methods=['GET'])
 def payment_cancel():
