@@ -36,8 +36,8 @@ sudo apt-get install zip -y
 echo "[SSH COMMAND - $id_arch] sudo apt-get install hashcat -y"
 sudo apt-get install hashcat -y
 
-echo "[SSH COMMAND - $id_arch] chmod +x /tmp/go_hashcat.sh"
-chmod +x /tmp/go_hashcat.sh
+echo "[SSH COMMAND - $id_arch] chmod +x /tmp/resume_hashcat.sh"
+chmod +x /tmp/resume_hashcat.sh
 
 echo "[SSH COMMAND - $id_arch] chmod +x /tmp/get_progress_live.sh"
 chmod +x /tmp/get_progress_live.sh
@@ -64,4 +64,4 @@ echo "[SSH COMMAND - $id_arch] sleep 1"
 sleep 1
 
 echo "[SSH COMMAND - $id_arch] /tmp/resume_hashcat.sh $id_arch $id_hash"
-/tmp/go_hashcat.sh $id_arch $id_hash
+/tmp/resume_hashcat.sh $id_arch $id_hash
