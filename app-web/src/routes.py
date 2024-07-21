@@ -192,7 +192,7 @@ def delete_hash(id_hash):
     else:
         return redirect(url_for('adminpanelUserHashes', id_user=hash.fk_id_user))
     
-# Route pour la Stop d'un hash
+# Route pour le Stop d'un hash
 @app.route('/adminpanel/hash_<int:id_hash>/stop', methods=['POST'])
 @login_required
 def stop_hash(id_hash):
@@ -201,9 +201,25 @@ def stop_hash(id_hash):
         abort(403)
     if hash.status != 'Processing':
         return redirect(url_for('account'))
-    hash.status = 'Terminate'
+    hash.status = 'Want Stop'
     db.session.commit()
     flash('The hash has been stopped !', 'success')
+    if '/account/myhashes' in request.referrer:
+        return redirect(url_for('account'))
+    else:
+        return redirect(url_for('adminpanelUserHashes', id_user=hash.fk_id_user))
+# Route pour le resume d'un hash
+@app.route('/adminpanel/hash_<int:id_hash>/resume', methods=['POST'])
+@login_required
+def resume_hash(id_hash):
+    hash = Hashes.query.get_or_404(id_hash)
+    if current_user.role != 'admin' and current_user.id_user != hash.fk_id_user:
+        abort(403)
+    if hash.status != 'Stopped':
+        return redirect(url_for('account'))
+    hash.status = 'Want Resume'
+    db.session.commit()
+    flash('The hash has been resumed!', 'success')
     if '/account/myhashes' in request.referrer:
         return redirect(url_for('account'))
     else:

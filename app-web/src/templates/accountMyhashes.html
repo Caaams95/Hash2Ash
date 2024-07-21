@@ -35,6 +35,11 @@
                         Stop
                     </button>
                     {% endif %}
+                    {% if hash.status == "Stopped" %}
+                    <button class="btn btn-sm btn-outline-success" type="button" data-bs-toggle="modal" data-bs-target="#resumeModal-{{hash.id_hash}}" >
+                        Resume
+                    </button>
+                    {% endif %}
                     {% if hash.status == "Initialisation" or hash.status == "In Queue"%}
                     <button class="btn btn-sm btn-outline-secondary" type="button" disabled>
                         Stop
@@ -76,6 +81,23 @@
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                             <form action="{{ url_for('stop_hash', id_hash=hash.id_hash) }}" method="post">
                                 <input class="btn btn-danger" type="submit" value="Stop">
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Modal resume Hash-->
+            <div class="modal fade" id="resumeModal-{{hash.id_hash}}" tabindex="-1" aria-labelledby="resumeModal-{{hash.id_hash}}Label" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h1 class="modal-title fs-5" id="resumeModal-{{hash.id_hash}}Label">Are you sure you want to resume the cracking process ?</h1>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                             <form action="{{ url_for('resume_hash', id_hash=hash.id_hash) }}" method="post"> <!-- A modifier avec la route -->
+                                <input class="btn btn-danger" type="submit" value="Resume">
                             </form>
                         </div>
                     </div>
