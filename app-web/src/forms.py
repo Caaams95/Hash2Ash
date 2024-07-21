@@ -1,7 +1,7 @@
 from flask_wtf import FlaskForm
 from flask_login import current_user
-from wtforms import StringField , PasswordField, SubmitField, BooleanField, SelectField, FileField, SelectMultipleField, widgets, BooleanField
-from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError, Optional
+from wtforms import StringField , PasswordField, SubmitField, BooleanField, SelectField, FileField, SelectMultipleField, widgets, BooleanField, DecimalField
+from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError, Optional, NumberRange
 from src.models import Users, Instances, Hashes
 from flask_wtf.file import FileAllowed, FileRequired
 
@@ -590,6 +590,7 @@ class CrackStationForm(FlaskForm):
         choices=[('', 'Choice ...'), ('Low', 'Low'), ('Medium', 'Medium'), ('High', 'High')],
         validators=[DataRequired()],
     )
+    price_limit = DecimalField('Price Limit', validators=[Optional(), NumberRange(min=10, max=1000000, message='Price limit must be between 10 and 1 000 000')], render_kw={'placeholder': 'Enter price limit', 'step': '0.01'})
     submit = SubmitField('Crack It!')
 
     def validate_wordlist(self, field):

@@ -95,6 +95,22 @@
             </div>
         {% endif %}
     </div>
+    <div class="col-md-12">
+        {{ form.price_limit.label(class="form-control-label") }}
+        <div class="input-group">
+            <span class="input-group-text px-3">$</span>
+            
+            {{ form.price_limit(class="form-control form-control-lg") }}
+            
+            {% if form.price_limit.errors %}
+                <div class="invalid-feedback">
+                    {% for error in form.price_limit.errors %}
+                        <span>{{ error }}</span>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
     <div class="col-12">
         {{ form.submit(class="btn btn-primary") }}
     </div>
