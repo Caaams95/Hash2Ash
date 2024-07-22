@@ -1,4 +1,4 @@
-from flask import render_template, url_for, flash, redirect, request, abort
+from flask import session, render_template, url_for, flash, redirect, request, abort
 from src import app, db, bcrypt, mail, s3
 from src.models import Users, Instances, Hashes
 from src.forms import RegistrationForm, LoginForm, CrackStationForm, UpdateAccountForm, AdminUpdateAccountForm, RequestResetForm, ResetPasswordForm   # Importation des classes RegistrationForm et LoginForm depuis forms.py
@@ -12,7 +12,7 @@ from werkzeug.utils import secure_filename
 import os
 import tempfile
 import json
-
+import stripe
 
 ### Routes
 @app.route('/')
@@ -85,9 +85,20 @@ def save_and_upload_file(file, user_id, file_type):
 def crackstation():
     form = CrackStationForm()
     if form.validate_on_submit():
-        #flash(f'form.wordlist.data', 'info') # Pour debbuger le formulaire
         if current_user.is_authenticated:
-            
+            stripe.api_key = app.config['STRIPE_API_KEY']
+            # Créer un produit
+            product = stripe.Product.create(
+                name="Daily Subscription",
+            )
+
+            # Créer un prix récurrent pour le produit
+            price = stripe.Price.create(
+                unit_amount=2000,  # Montant en cents
+                currency="usd",
+                recurring={"interval": "day"},
+                product=product.id,
+            )
             url_hash = save_and_upload_file(form.hash.data, current_user.id_user, 'hash')
 
             form.wordlist.data = None if not form.wordlist.data else json.dumps(form.wordlist.data)
@@ -95,13 +106,20 @@ def crackstation():
                 url_custom_wordlist = save_and_upload_file(form.custom_wordlist.data, current_user.id_user, 'custom_wordlist')
             else:
                 url_custom_wordlist = None
-            print(form.price_limit.data)
-            hash = Hashes(hash=url_hash, name=form.name.data ,algorithm=form.algorithm.data, wordlist=form.wordlist.data, custom_wordlist=url_custom_wordlist ,power=form.power.data, provider=form.provider.data, status='In Queue', price=0, fk_id_user=current_user.id_user, price_limit=form.price_limit.data)
-            db.session.add(hash)
-            db.session.commit()
-            #flash(f'Hash added to database', 'info') # Pour debbuger le formulaire
-            flash(f'Your hash crack has been added to the queue', 'success')
-            return redirect(url_for('crackstation'))
+            
+            wordlist = None if not form.wordlist.data else json.dumps(form.wordlist.data)
+            session['form_data'] = {
+                'name': form.name.data,
+                'hash': url_hash,
+                'algorithm': form.algorithm.data,
+                'wordlist': wordlist,
+                'custom_wordlist': url_custom_wordlist,
+                'power': form.power.data,
+                'provider': form.provider.data,
+                'price_limit': form.price_limit.data
+            }
+            return redirect(url_for('create_checkout_session'))  # Redirect to Stripe
+            
         else:
             flash(f'You must be logged in to use Crack Station', 'danger')
             return redirect(url_for('login')) 
@@ -291,3 +309,55 @@ def reset_token(token):
         flash(f'Your password has been updated !', 'success') ## Si c'est vrai on redirige vers la fonction home
         return redirect(url_for('login'))
     return render_template('resetToken.html', title='Reset Password', form=form)
+
+@app.route('/create-checkout-session', methods=['GET', 'POST'])
+@login_required
+def create_checkout_session():
+    stripe.api_key = app.config['STRIPE_API_KEY']
+    
+    if current_user.is_authenticated:
+        prices = stripe.Price.list()
+        price_id = prices.data[0].id
+        
+        checkout_session = stripe.checkout.Session.create(
+            payment_method_types=['card'],
+            line_items=[
+                {
+                    'price': price_id,
+                    'quantity': 1,
+                },
+            ],
+            mode='subscription',
+            success_url=url_for('payment_success', _external=True) + '?session_id={CHECKOUT_SESSION_ID}',
+            cancel_url=url_for('payment_cancel', _external=True),
+        )
+        
+        return redirect(checkout_session.url, code=303)
+    else:
+        return redirect(url_for('login'))
+    
+# Route pour le succès du paiement
+@app.route('/payment-success', methods=['GET'])
+@login_required
+def payment_success():
+    if current_user.is_authenticated:
+        session_id = request.args.get('session_id')
+        form_data = session.get('form_data', {})
+        # Mettre à jour le statut de l'abonnement en "Paid" ou similaire
+        
+        print(form_data.get('price_limit'))
+        hash = Hashes(hash=form_data.get('hash'), name=form_data.get('name') ,algorithm=form_data.get('algorithm'), wordlist=form_data.get('wordlist'), custom_wordlist=form_data.get('custom_wordlist') ,power=form_data.get('power'), provider=form_data.get('provider'), status='In Queue', price=0, fk_id_user=current_user.id_user, price_limit=form_data.get('price_limit'))
+        db.session.add(hash)
+        db.session.commit()
+        session.pop('form_data', None)
+        flash(f'Your hash crack has been added to the queue', 'success')
+        flash('Payment successful! Your daily subscription is active.', 'success')
+        # Redirection après succès de paiement, avec possibilité de remboursement des paiements précédents
+        return redirect(url_for('account'))
+    else:
+        return redirect(url_for('login'))
+    
+@app.route('/payment-cancel', methods=['GET'])
+def payment_cancel():
+    flash('Payment was canceled. Your subscription has not been activated.', 'danger')
+    return redirect(url_for('crackstation'))
