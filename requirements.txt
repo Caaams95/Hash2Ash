@@ -10,3 +10,4 @@ python-dotenv
 psycopg2
 boto3
 psycopg2-binary
+stripe
