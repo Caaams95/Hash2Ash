@@ -15,7 +15,13 @@ id_instance=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p 
 
 # Définir la date de début
 DATE_START=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -t -c "SELECT date_start FROM public.instances WHERE id_arch='$id_arch';" | xargs)
-price=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -t -c "SELECT price_hash2ash FROM public.instances WHERE id_arch='$id_arch';" | xargs)
+
+# Récupération du prix de l'instance par heure
+power=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -t -c "SELECT power FROM public.instances WHERE id_instance = '$id_instance';" | xargs)
+provider=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -t -c "SELECT provider FROM public.hashes WHERE fk_id_instance = '$id_instance';" | xargs)
+
+price_instance_hash2ash=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -t -c "SELECT price_hash2ash FROM public.conf_instance WHERE power = '$power' AND provider = '$provider';" | xargs)
+
 
 
 while true
@@ -41,9 +47,9 @@ do
     SECONDS=$(echo "$DIFF % 60" | bc)
 
     # Calculer le coût total en tenant compte des heures décimales
-    HOURS_COST=$(echo "$HOURS * $price" | bc -l)
-    MINUTES_COST=$(echo "$MINUTES / 60 * $price" | bc -l)
-    SECONDS_COST=$(echo "$SECONDS / 3600 * $price" | bc -l)  # Correction: / 3600 pour les secondes
+    HOURS_COST=$(echo "$HOURS * $price_instance_hash2ash" | bc -l)
+    MINUTES_COST=$(echo "$MINUTES / 60 * $price_instance_hash2ash" | bc -l)
+    SECONDS_COST=$(echo "$SECONDS / 3600 * $price_instance_hash2ash" | bc -l)  # Correction: / 3600 pour les secondes
 
     TOTAL_COST=$(echo "$HOURS_COST + $MINUTES_COST + $SECONDS_COST" | bc -l)
 
@@ -53,7 +59,7 @@ do
 
     # Afficher le coût total
     echo " "
-    echo "Cout par heure : $price €"
+    echo "Cout par heure : $price_instance_hash2ash €"
     echo "Temps d'activité : $HOURS h - $MINUTES min - $SECONDS s"
 
 #    echo "Cout heures = $HOURS_COST €"
