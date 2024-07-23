@@ -590,7 +590,7 @@ class CrackStationForm(FlaskForm):
         choices=[('', 'Choice ...'), ('Low', 'Low'), ('Medium', 'Medium'), ('High', 'High')],
         validators=[DataRequired()],
     )
-    price_limit = DecimalField('Price Limit', validators=[Optional(), NumberRange(min=10, max=1000000, message='Price limit must be between 10 and 1 000 000')], render_kw={'placeholder': 'Enter price limit', 'step': '0.01'})
+    price_limit = DecimalField('Price Limit', validators=[Optional(), NumberRange(min=5, max=1000000, message='Price limit must be between 10 and 1 000 000')], render_kw={'placeholder': 'Enter price limit', 'step': '0.01'})
     submit = SubmitField('Crack It!')
 
     def validate_wordlist(self, field):
