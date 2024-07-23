@@ -46,7 +46,7 @@ def login():
         user = Users.query.filter_by(email=form.email.data).first()
         if user and bcrypt.check_password_hash(user.password, form.password.data):
             flash(f'Login Successful. Welcome {user.username} !', 'success')
-            login_user(user, remember=form.remember.data)
+            login_user(user)
             next_page = request.args.get('next')
             return redirect(next_page) if next_page else redirect(url_for('crackstation'))
         else:
@@ -283,8 +283,7 @@ If you did not make this request then simply ignore this email and no changes wi
 # Route pour la réinitialisation du mot de passe
 @app.route('/reset_password', methods=['GET', 'POST'])
 def reset_password():
-    if current_user.is_authenticated:
-        return redirect(url_for('home'))
+    
     form = RequestResetForm()
     if form.validate_on_submit():
         user = Users.query.filter_by(email=form.email.data).first()
