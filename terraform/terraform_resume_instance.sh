@@ -32,7 +32,6 @@ current_count_high=$(terraform state list | grep 'aws_instance.instance_high' | 
 
 if [ "$power" == "Low" ]; then
     type_instance=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -t -c "SELECT type_provider FROM public.conf_instance WHERE power = '$power';" | xargs)
-
     new_count=$((current_count_low + 1))
     terraform apply -refresh=false -auto-approve -var="total_instance_count_low=$new_count" -var="total_instance_count_medium=$current_count_medium" -var="total_instance_count_high=$current_count_high"
     # Récupérer les détails des instances créées
@@ -91,7 +90,6 @@ echo =======================================
 
 # Récupération du prix de l'instance
 provider=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -t -c "SELECT provider FROM public.hashes WHERE fk_id_instance = '$id_instance';" | xargs)
-price_instance_hash2ash=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -t -c "SELECT price_hash2ash FROM public.conf_instance WHERE power = '$power' AND provider = '$provider';" | xargs)
 
 
 # Insérer l'ID de la nouvelle instance dans la base de données (exemple avec PostgreSQL)
@@ -99,7 +97,7 @@ is_processed=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p
 
 if [ "$is_processed" -le 0 ]; then
     # Ajouter l'instance dans la base de données
-    PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -c "INSERT INTO public.instances (type_instance, id_arch, price_hash2ash, status, ip) VALUES ('$type_instance', '$id_arch', 2, $price_instance_hash2ash, '$status_processing', '$instance_ip');"
+    PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -c "INSERT INTO public.instances (type_instance, id_arch, status, ip) VALUES ('$type_instance', '$id_arch', '$status_processing', '$instance_ip');"
 
     # hashes.status = Processing
     PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -c "UPDATE public.hashes SET status = '$status_processing' WHERE id_hash = $id_hash;"
