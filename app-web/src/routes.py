@@ -1,6 +1,6 @@
 from flask import session, render_template, url_for, flash, redirect, request, abort
 from src import app, db, bcrypt, mail, s3
-from src.models import Users, Instances, Hashes
+from src.models import Users, Instances, Hashes, Conf_instance
 from src.forms import RegistrationForm, LoginForm, CrackStationForm, UpdateAccountForm, AdminUpdateAccountForm, RequestResetForm, ResetPasswordForm   # Importation des classes RegistrationForm et LoginForm depuis forms.py
 from flask_login import login_user, current_user, logout_user, login_required
 from flask_mail import Message
@@ -87,6 +87,7 @@ def crackstation():
     if form.validate_on_submit():
         if current_user.is_authenticated:
             stripe.api_key = app.config['STRIPE_API_KEY']
+            power = Conf_instance.query.filter_by(power=form.power.data).first()
             # Créer un produit
             product = stripe.Product.create(
                 name="Daily Subscription",
@@ -94,7 +95,7 @@ def crackstation():
 
             # Créer un prix récurrent pour le produit
             price = stripe.Price.create(
-                unit_amount=2000,  # Montant en cents
+                unit_amount=int(power.price_hash2ash * 100 * 24),  # Montant en cents
                 currency="usd",
                 recurring={"interval": "day"},
                 product=product.id,
@@ -341,7 +342,6 @@ def create_checkout_session():
 @login_required
 def payment_success():
     if current_user.is_authenticated:
-        session_id = request.args.get('session_id')
         form_data = session.get('form_data', {})
         # Mettre à jour le statut de l'abonnement en "Paid" ou similaire
         
