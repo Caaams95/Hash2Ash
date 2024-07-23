@@ -38,13 +38,13 @@ class Instances(db.Model):
     id_instance = db.Column(db.Integer, primary_key=True)
     type_instance = db.Column(db.String(50), nullable=False)
     id_arch = db.Column(db.String(50), nullable=True) ## id_provider
-    price_provider = db.Column(db.Float, nullable=False)
     price_hash2ash = db.Column(db.Float, nullable=False)
     date_start = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     date_shutdown = db.Column(db.DateTime, nullable=True)
     status = db.Column(db.String(20), nullable=True)
     price_total = db.Column(db.Float, nullable=True)
     fk_id_hash = db.Column(db.Integer, nullable=True)
+    ip = db.Column(db.String(20), nullable=True)
 
     def __repr__(self):
         return f"instances('{self.type_instance}', '{self.id_arch}', '{self.price_provider}', '{self.date_start}', '{self.date_shutdown}','{self.price_hash2ash}', '{self.status}', '{self.price_total}')"
