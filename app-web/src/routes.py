@@ -135,8 +135,8 @@ def crackstation():
 def account():
     page = request.args.get('page', 1, type=int)
     instances = Instances.query.all()
-    hash_count = Hashes.query.filter_by(fk_id_user=current_user.id_user).count()
-    hashes = Hashes.query.filter_by(fk_id_user=current_user.id_user).order_by(Hashes.id_hash.desc()).paginate(page=page, per_page=10)
+    hash_count = Hashes.query.filter_by(fk_id_user=current_user.id_user, display_user=True).count()
+    hashes = Hashes.query.filter_by(fk_id_user=current_user.id_user, display_user=True).order_by(Hashes.id_hash.desc()).paginate(page=page, per_page=10)
 
     return render_template('accountMyhashes.html', title='My Hashes', hashes=hashes, instances=instances, hash_count=hash_count)
 
@@ -244,6 +244,28 @@ def resume_hash(id_hash):
     else:
         return redirect(url_for('adminpanelUserHashes', id_user=hash.fk_id_user))
     
+# Route pour le désactiver un hash
+@app.route('/adminpanel/hash_<int:id_hash>/soft_delete', methods=['POST'])
+@login_required
+def soft_delete_hash(id_hash):
+    hash = Hashes.query.get_or_404(id_hash)
+    if current_user.role != 'admin' and current_user.id_user != hash.fk_id_user:
+        abort(403)
+    if hash.display_user != True and current_user.role == 'admin':
+        hash.display_user = True
+        flash('The hash has been reactivated !', 'success')
+    else:
+        hash.display_user = False
+        if current_user.role == 'admin':
+            flash('The hash has been deactivated !', 'success')
+        else:
+            flash('The hash has been deleted !', 'success')
+    db.session.commit()
+    if '/account/myhashes' in request.referrer:
+        return redirect(url_for('account'))
+    else:
+        return redirect(url_for('adminpanelUserHashes', id_user=hash.fk_id_user))
+    
 # Route pour la suppression d'un utilisateur
 @app.route('/adminpanel/user_<int:id_user>/delete', methods=['POST'])
 @login_required
@@ -306,7 +328,7 @@ def reset_token(token):
         hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
         user.password = hashed_password
         db.session.commit()
-        flash(f'Your password has been updated !', 'success') ## Si c'est vrai on redirige vers la fonction home
+        flash(f'Your password has been updated !', 'success') 
         return redirect(url_for('login'))
     return render_template('resetToken.html', title='Reset Password', form=form)
 
