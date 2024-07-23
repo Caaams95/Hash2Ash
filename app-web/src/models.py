@@ -1,4 +1,5 @@
 from datetime import datetime
+from pytz import timezone
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer # Importation de la classe Serializer pour générer des tokens
 from src import db, login_manager, app # Importation de l'instance de la base de données et de l'instance de login_manager
 from flask_login import UserMixin   # Importation de la classe UserMixin qui contient les méthodes de base pour gérer les utilisateurs
@@ -39,7 +40,7 @@ class Instances(db.Model):
     type_instance = db.Column(db.String(50), nullable=False)
     id_arch = db.Column(db.String(50), nullable=True) ## id_provider
     price_hash2ash = db.Column(db.Float, nullable=False)
-    date_start = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    date_start = db.Column(db.DateTime, nullable=False, default=datetime.now(timezone('Europe/Paris')))
     date_shutdown = db.Column(db.DateTime, nullable=True)
     status = db.Column(db.String(20), nullable=True)
     price_total = db.Column(db.Float, nullable=True)
@@ -53,7 +54,7 @@ class Hashes(db.Model):
     id_hash = db.Column(db.Integer, primary_key=True)
     fk_id_user = db.Column(db.Integer, db.ForeignKey('users.id_user'), nullable=False)
     fk_id_instance = db.Column(db.Integer, db.ForeignKey('instances.id_instance', use_alter=True), nullable=True)
-    date_start = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    date_start = db.Column(db.DateTime, nullable=False, default=datetime.now(timezone('Europe/Paris')))
     date_end = db.Column(db.DateTime, nullable=True)
     name = db.Column(db.String(60), nullable=False)
     hash = db.Column(db.String(255), nullable=False)
