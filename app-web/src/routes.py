@@ -283,8 +283,7 @@ If you did not make this request then simply ignore this email and no changes wi
 # Route pour la réinitialisation du mot de passe
 @app.route('/reset_password', methods=['GET', 'POST'])
 def reset_password():
-    if current_user.is_authenticated:
-        return redirect(url_for('home'))
+    
     form = RequestResetForm()
     if form.validate_on_submit():
         user = Users.query.filter_by(email=form.email.data).first()
