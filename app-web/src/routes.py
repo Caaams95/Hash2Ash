@@ -46,7 +46,7 @@ def login():
         user = Users.query.filter_by(email=form.email.data).first()
         if user and bcrypt.check_password_hash(user.password, form.password.data):
             flash(f'Login Successful. Welcome {user.username} !', 'success')
-            login_user(user, remember=form.remember.data)
+            login_user(user)
             next_page = request.args.get('next')
             return redirect(next_page) if next_page else redirect(url_for('crackstation'))
         else:
