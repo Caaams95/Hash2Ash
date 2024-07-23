@@ -73,3 +73,15 @@ class Hashes(db.Model):
 
     def __repr__(self):
         return f"Hashes('{self.name}', '{self.hash}', '{self.power}', '{self.wordlist}', '{self.custom_wordlist}', '{self.algorithm}', '{self.result}', '{self.status}', '{self.progress}', '{self.price}', '{self.time_estimated}', '{self.hash_per_second}', '{self.price_limit}', '{self.provider}')"
+
+class Conf_instance(db.Model):
+    id_conf = db.Column(db.Integer, primary_key=True)
+    power = db.Column(db.String(20), nullable=False)
+    type_provider = db.Column(db.String(20), nullable=False)
+    provider = db.Column(db.String(20), nullable=True)
+    price_provider = db.Column(db.Float, nullable=True)
+    price_hash2ash = db.Column(db.Float, nullable=True)
+    profit_percentage = db.Column(db.Integer, nullable=True)
+
+    def __repr__(self):
+        return f"Conf_instance('{self.power}', '{self.type_provider}', '{self.provider}', '{self.price_provider}', '{self.price_hash2ash}', '{self.profit_percentage}')"
