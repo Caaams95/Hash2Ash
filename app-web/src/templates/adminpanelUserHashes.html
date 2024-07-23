@@ -3,7 +3,13 @@
 
 <div class="content-section mb-4">
     <legend class="border-bottom mb-4">{{ username }}'s Hashes History</legend>
+    {% if hash_count == 0 %}
+    <div>
+        <p>No hashes found.</p>
+    </div>
+    {% else %}
     <small>{{hash_count}} {{'hashes' if hash_count > 1 else 'hash'}}</small>
+    {% endif %}
     <div class="accordion" id="accordionPanelsStayOpenExample">
         {% if hashes %}
             {% for hash in hashes.items %}
@@ -26,8 +32,14 @@
                             <p class="mb-2">End Date: {{ instance.date_shutdown.strftime("%d/%m/%Y %H:%M:%S") if instance.date_shutdown else "None" }}</p>
                         {%endif%}
                     {% endfor %}
+                    {% if hash.result != None %}
                     <p class="mb-2"><strong>Result:</strong> <a href="{{hash.result}}">Click Here !</a></p>
+                    {% endif %}
                     <p class="mb-2"><strong>Status:</strong> {{hash.status}}</p>
+                    {% if hash.status == "Processing" %}
+                    <p class="mb-2"><strong>Progress:</strong> {{hash.progress}}</p>
+                    <p class="mb-2"><strong>Time estimated:</strong> {{hash.time_estimated}}</p>
+                    {% endif %}
                     <p class="mb-2">Price: {{hash.price}}</p>
                     {% if hash.status == "Processing" %}
                     <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#stopModal-{{hash.id_hash}}" >
@@ -44,10 +56,41 @@
                         Stop
                     </button>
                     {% endif %}
+                    {% if hash.display_user == True %}
+                    <button class="btn btn-outline-warning btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#soft_deleteModal-{{hash.id_hash}}" >
+                        Deactivate
+                    </button>
+                    {% else %}
+                    <button class="btn btn-outline-success btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#soft_deleteModal-{{hash.id_hash}}" >
+                        Reactivate
+                    </button>
+                    {% endif %}
                     <button class="btn btn-outline-danger btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#deleteModal-{{hash.id_hash}}" >
                         Delete
                     </button>
+                    
+                    
                 </div>
+                </div>
+            </div>
+            <!-- Modal soft_delete Hash-->
+            <div class="modal fade" id="soft_deleteModal-{{hash.id_hash}}" tabindex="-1" aria-labelledby="soft_deleteModal-{{hash.id_hash}}Label" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h1 class="modal-title fs-5" id="soft_deleteModal-{{hash.id_hash}}Label">Are you sure ?</h1>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>{% if hash.display_user == True %} The user will no longer see the hash in their history. {% else %} The user will be able to see the hash in their history again. {% endif %}</p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <form action="{{ url_for('soft_delete_hash', id_hash=hash.id_hash) }}" method="post">
+                                <input class="btn btn-danger" type="submit" value="{% if hash.display_user == True %} Deactivate {% else %} Reactivate {% endif %}">
+                            </form>
+                        </div>
+                    </div>
                 </div>
             </div>
             <!-- Modal Delete Hash-->

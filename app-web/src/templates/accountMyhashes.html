@@ -2,10 +2,17 @@
 {% block content %}
 <div class="content-section mb-4">
     <legend class="border-bottom mb-4">Hashes History</legend>
+    {% if hash_count == 0 %}
+    <div>
+        <p>No hashes found.</p>
+    </div>
+    {% else %}
     <small>{{hash_count}} {{'hashes' if hash_count > 1 else 'hash'}}</small>
+    {% endif %}
+    
     <div class="accordion" id="accordionPanelsStayOpenExample">
         {% if hashes %}
-            {% for hash in hashes.items %}
+            {% for hash in hashes.items if hash.display_user == True %}
             <div class="accordion-item">
                 <h2 class="accordion-header">
                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapse{{hash.id_hash}}" aria-expanded="true" aria-controls="panelsStayOpen-collapseOne">
@@ -25,8 +32,14 @@
                             <p class="mb-2">End Date: {{ instance.date_shutdown.strftime("%d/%m/%Y %H:%M:%S") if instance.date_shutdown else "None" }}</p>
                         {%endif%}
                     {% endfor %}
+                    {% if hash.result != None %}
                     <p class="mb-2"><strong>Result:</strong> <a href="{{hash.result}}">Click Here !</a></p>
+                    {% endif %}
                     <p class="mb-2"><strong>Status:</strong> {{hash.status}}</p>
+                    {% if hash.status == "Processing" %}
+                    <p class="mb-2"><strong>Progress:</strong> {{hash.progress}}</p>
+                    <p class="mb-2"><strong>Time estimated:</strong> {{hash.time_estimated}}</p>
+                    {% endif %}
                     <p class="mb-2">Price: {{hash.price}}</p>
                     
                     
@@ -62,7 +75,7 @@
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                            <form action="{{ url_for('delete_hash', id_hash=hash.id_hash) }}" method="post">
+                            <form action="{{ url_for('soft_delete_hash', id_hash=hash.id_hash) }}" method="post">
                                 <input class="btn btn-danger" type="submit" value="Delete">
                             </form>
                         </div>
@@ -104,11 +117,8 @@
                 </div>
             </div>
             {% endfor %}
-        {% else %}
-            <div>
-                <p>No hashes found.</p>
-            </div>
         {% endif %}
+        
     </div>
     <ul class="pagination justify-content-center mt-3">
         {% for page_num in hashes.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
