@@ -18,6 +18,9 @@ status_processing="Processing"
 # hashes.status = Initialisation
 PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -c "UPDATE public.hashes SET status='$status_initialisation' WHERE id_hash='$id_hash';"
 
+# use_terraform='1'
+PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -c "UPDATE public.hashes SET use_terraform='1' WHERE id_hash='$id_hash';"
+
 # Select power instance needed
 power=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -t -c "SELECT power FROM public.hashes WHERE id_hash = '$id_hash';" | xargs)
 echo power : $power
@@ -48,6 +51,7 @@ if [ "$power" == "Low" ]; then
 elif [ "$power" == "Medium" ]; then
     type_instance=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -t -c "SELECT type_provider FROM public.conf_instance WHERE power = '$power';" | xargs)
     new_count=$((current_count_medium + 1))
+    # Créer la nouvelle instance
     terraform apply -refresh=false -auto-approve -var="total_instance_count_low=$current_count_low" -var="total_instance_count_medium=$new_count" -var="total_instance_count_high=$current_count_high"
     # Récupérer les détails des instances créées
     instances_details=$(terraform output -json instances_details_medium)
@@ -81,6 +85,13 @@ else
 fi
 
 
+
+
+# use_terraform='0'
+PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -c "UPDATE public.hashes SET use_terraform='0' WHERE id_hash='$id_hash';"
+
+
+
 echo =======================================
 echo id_hash = $id_hash
 echo instance_ip = $instance_ip
@@ -90,14 +101,15 @@ echo =======================================
 
 
 id_stripe=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -t -c "SELECT id_stripe FROM public.hashes WHERE id_hash = '$id_hash';" | xargs)
+id_user=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -t -c "SELECT fk_id_user FROM public.hashes WHERE id_hash = '$id_hash';" | xargs)
 
 # Insérer l'ID de la nouvelle instance dans la base de données (exemple avec PostgreSQL)
 is_processed=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -t -c "SELECT COUNT(*) FROM public.instances WHERE id_arch = '$id_arch';" | tr -d '[:space:]')
 
 if [ "$is_processed" -le 0 ]; then
     # Ajouter l'instance dans la base de données
-    echo "[INSERT BDD] INSERT INTO public.instances (type_instance, id_arch, status, ip, id_stripe) VALUES ('$type_instance', '$id_arch', '$status_processing', '$instance_ip', '$id_stripe');"
-    PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -c "INSERT INTO public.instances (type_instance, id_arch, status, ip, id_stripe) VALUES ('$type_instance', '$id_arch', '$status_processing', '$instance_ip', '$id_stripe');"
+    echo "[INSERT BDD] INSERT INTO public.instances (type_instance, id_arch, status, ip, id_user, id_stripe) VALUES ('$type_instance', '$id_arch', '$status_processing', '$instance_ip', '$id_user','$id_stripe');"
+    PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -c "INSERT INTO public.instances (type_instance, id_arch, status, ip, id_user, id_stripe) VALUES ('$type_instance', '$id_arch', '$status_processing', '$instance_ip', '$id_user', '$id_stripe');"
 
     echo "[UPDATE BDD] UPDATE public.hashes SET status = '$status_processing' WHERE id_hash = $id_hash;" 
     # hashes.status = Processing

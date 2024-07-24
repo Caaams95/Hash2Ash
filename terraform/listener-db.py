@@ -54,58 +54,59 @@ def launch_newinstance():
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    # Sélectionner le plus petit id_hash avec le statut 'In Queue'
-    cursor.execute(f"SELECT id_hash FROM public.hashes WHERE status='{inqueue}' ORDER BY id_hash ASC LIMIT 1;")
-    result = cursor.fetchone()
-    
-    if result:
-        # Vérifier s'il y a des statuts 'Initialisation'
-        cursor.execute(f"SELECT COUNT(*) FROM public.hashes WHERE status = '{initialisation}';")
-        init_count = cursor.fetchone()[0]
-        if init_count == 0:
+    cursor.execute(f"SELECT COUNT(*) FROM public.hashes WHERE use_terraform = '1';")
+    init_count = cursor.fetchone()[0]
+    if init_count == 0:
+        # Sélectionner le plus petit id_hash avec le statut 'In Queue'
+        cursor.execute(f"SELECT id_hash FROM public.hashes WHERE status='{inqueue}' ORDER BY id_hash ASC LIMIT 1;")
+        result = cursor.fetchone()
+
+        if result:
             id_hash = result[0]
             # Terraform en cours ? terraform_new_instance : j'attends
             print(f"{vert("[ANALYSE BDD]")} id_hash {id_hash} détecté.")
             print(f"{vert("[ACTION]")} Création d'instance pour id_hash : {id_hash}.")
             subprocess.run(f"./terraform_new_instance.sh {id_hash}", shell=True, check=True)
         else:
-            print(f"{jaune("[ANALYSE BDD]")} Impossible de lancer de nouvelle instance, {init_count} Initialisation d'instance est déjà en cours.")
-            print(f"{jaune("[ANALYSE BDD]")} Veuillez patienter...")
-            #print(f"[*] id hash {id_hash} en attente")
-    else:
             print(f"{rouge("[ANALYSE BDD]")} Aucun id_hash en attente.")
+            
+    else:
+        print(f"{jaune("[ANALYSE BDD]")} Impossible de lancer de nouvelle instance, Terraform est déjà en cours d'utilisation.")
+        print(f"{jaune("[ANALYSE BDD]")} Veuillez patienter...")
+        #print(f"[*] id hash {id_hash} en attente")
     
     cursor.close()
     conn.close()
 
+
 def resume_newinstance():
+
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    # Sélectionner le plus petit id_hash avec le statut 'In Queue'
-    cursor.execute(f"SELECT id_hash FROM public.hashes WHERE status='{want_resume}' ORDER BY id_hash ASC LIMIT 1;")
-    result = cursor.fetchone()
-    
-    if result:
-        # Vérifier s'il y a des statuts 'Initialisation'
-        cursor.execute(f"SELECT COUNT(*) FROM public.hashes WHERE status = '{initialisation}';")
-        init_count = cursor.fetchone()[0]
-        if init_count == 0:
+    cursor.execute(f"SELECT COUNT(*) FROM public.hashes WHERE use_terraform = '1';")
+    init_count = cursor.fetchone()[0]
+    if init_count == 0:
+        # Sélectionner le plus petit id_hash avec le statut 'In Queue'
+        cursor.execute(f"SELECT id_hash FROM public.hashes WHERE status='{want_resume}' ORDER BY id_hash ASC LIMIT 1;")
+        result = cursor.fetchone()
+
+        if result:
             id_hash = result[0]
-            # Terraform en cours ? j'attends
+            # Terraform en cours ? terraform_new_instance : j'attends
             print(f"{vert("[ANALYSE BDD]")} id_hash {id_hash} détecté.")
             print(f"{vert("[ACTION]")} Création d'instance 'Resume' pour id_hash : {id_hash}.")
             subprocess.run(f"./terraform_resume_instance.sh {id_hash}", shell=True, check=True)
         else:
-            print(f"{jaune("[ANALYSE BDD]")} Impossible de lancer de nouvelle instance, {init_count} Initialisation d'instance est déjà en cours.")
-            print(f"{jaune("[ANALYSE BDD]")} Veuillez patienter...")
-            #print(f"[*] id hash {id_hash} en attente")
-    else:
             print(f"{rouge("[ANALYSE BDD]")} Aucun id_hash en attente.")
-
+            
+    else:
+        print(f"{jaune("[ANALYSE BDD]")} Impossible de lancer de nouvelle instance, Terraform est déjà en cours d'utilisation.")
+        print(f"{jaune("[ANALYSE BDD]")} Veuillez patienter...")
+        #print(f"[*] id hash {id_hash} en attente")
+    
     cursor.close()
     conn.close()
-
 
 def instance_terminate():
     conn = get_db_connection()
@@ -130,8 +131,21 @@ def instance_terminate():
             print(f"{vert("[BDD UPDATE]")} ./cost_instance_total.sh {id_arch}")
             subprocess.run(f"./cost_instance_total.sh {id_arch}", shell=True, check=True)           
             print(f"{vert("[STATUS]")} Instance {id_arch} : {terminate}.")
+            print(f"{vert("[REMBOURSEMENT]")} Lancement du remboursement...")
+            # get_refund(id_arch)
+            #    id_arch --> id_stripe
+            #    id_arch --> instances.type_instance
+            #    id_arch --> instances.price_total
+            #    instances.type_instance --> conf_instance.price_has2ash
+            #    refund_amount = conf_instance.price_has2ash * 24
+            #    ...
+            #   
+            #    stripe_refund(id_stripe, refund_amount*100)
+
     cursor.close()
     conn.close()
+
+
 
 
 def instance_want_stop():
@@ -140,7 +154,7 @@ def instance_want_stop():
     cursor.execute(f"""
         SELECT id_hash FROM public.hashes
         LEFT JOIN public.instances ON public.instances.id_instance = public.hashes.fk_id_instance
-        WHERE public.instances.status != '{terminate}'
+        SWHERE public.instances.status != '{terminate}'
         AND public.hashes.status = '{want_stop}'
         ;
     """)    
