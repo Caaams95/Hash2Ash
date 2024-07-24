@@ -12,3 +12,5 @@ boto3
 psycopg2-binary
 stripe
 pytz
+schedule
+boto3

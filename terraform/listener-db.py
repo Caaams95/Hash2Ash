@@ -24,7 +24,7 @@ load_dotenv()
 print("start listener.py")
 
 # Info pour l'auth de la bdd
-
+20
 db_config = {
     'user': os.getenv('DB_USERNAME'),
     'password': os.getenv('DB_PASSWORD'),
@@ -136,15 +136,7 @@ def instance_terminate():
             subprocess.run(f"./cost_instance_total.sh {id_arch}", shell=True, check=True)           
             print(f"{vert("[STATUS]")} Instance {id_arch} : {terminate}.")
             print(f"{vert("[REMBOURSEMENT]")} Lancement du remboursement...")
-            # get_refund(id_arch)
-            #    id_arch --> id_stripe
-            #    id_arch --> instances.type_instance
-            #    id_arch --> instances.price_total
-            #    instances.type_instance --> conf_instance.price_has2ash
-            #    refund_amount = conf_instance.price_has2ash * 24
-            #    ...
-            #   
-            #    stripe_refund(id_stripe, refund_amount*100)
+            get_refund(id_arch)
 
     cursor.close()
     conn.close()
@@ -269,6 +261,8 @@ async def run_in_executor(func):
 
 # Fonction principale asynchrone
 async def main():
+    asyncio.create_task(crontab_24())
+
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
