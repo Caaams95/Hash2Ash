@@ -656,3 +656,16 @@ class ResetPasswordForm(FlaskForm):
     confirm_password = PasswordField('Confirm Password', validators=[DataRequired(), EqualTo('password')])
     submit = SubmitField('Reset Password')
         
+class ResumeHashForm(FlaskForm):
+    hash_id=StringField('Hash ID')
+    provider = SelectField(
+        'Provider',
+        choices=[('', 'Choice ...'), ('AWS', 'AWS')],
+        validators=[DataRequired()]
+    )
+    power = SelectField(
+        'Power',
+        choices=[('', 'Change power'), ('Low', 'Low'), ('Medium', 'Medium'), ('High', 'High')],validators=[DataRequired()]
+    )
+    price_limit = DecimalField('Price Limit', validators=[Optional(), NumberRange(min=5, max=1000000, message='Price limit must be between 10 and 1 000 000')], render_kw={'placeholder': 'Enter price limit', 'step': '0.01'})
+    submit = SubmitField('Crack again !')
