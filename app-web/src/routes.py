@@ -102,7 +102,7 @@ def crackstation():
             )
             url_hash = save_and_upload_file(form.hash.data, current_user.id_user, 'hash')
 
-            form.wordlist.data = None if not form.wordlist.data else json.dumps(form.wordlist.data)
+            form.wordlist.data = None if not form.wordlist.data else form.wordlist.data
             if form.custom_wordlist.data:
                 url_custom_wordlist = save_and_upload_file(form.custom_wordlist.data, current_user.id_user, 'custom_wordlist')
             else:
@@ -371,14 +371,13 @@ def payment_success():
         db.session.add(hash)
         db.session.commit()
         session.pop('form_data', None)
-        flash(f'Your hash crack has been added to the queue', 'success')
-        flash('Payment successful! Your daily subscription is active.', 'success')
-        # Redirection après succès de paiement, avec possibilité de remboursement des paiements précédents
+        flash(f'Payment successful! Your hash crack has been added to the queue', 'success')
+
         return redirect(url_for('account'))
     else:
         return redirect(url_for('login'))
     
 @app.route('/payment-cancel', methods=['GET'])
 def payment_cancel():
-    flash('Payment was canceled. Your subscription has not been activated.', 'danger')
+    flash('Payment was canceled.', 'warning')
     return redirect(url_for('crackstation'))
