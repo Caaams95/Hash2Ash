@@ -94,8 +94,10 @@ is_processed=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p
 
 if [ "$is_processed" -le 0 ]; then
     # Ajouter l'instance dans la base de données
+    echo "[INSERT BDD] INSERT INTO public.instances (type_instance, id_arch, status, ip) VALUES ('$type_instance', '$id_arch', '$status_processing', '$instance_ip');"
     PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -c "INSERT INTO public.instances (type_instance, id_arch, status, ip) VALUES ('$type_instance', '$id_arch', '$status_processing', '$instance_ip');"
 
+    echo "[UPDATE BDD] UPDATE public.hashes SET status = '$status_processing' WHERE id_hash = $id_hash;" 
     # hashes.status = Processing
     PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -c "UPDATE public.hashes SET status = '$status_processing' WHERE id_hash = $id_hash;"
 

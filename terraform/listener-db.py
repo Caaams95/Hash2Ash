@@ -54,28 +54,27 @@ def launch_newinstance():
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    # Vérifier s'il y a des statuts 'Initialisation'
-    cursor.execute(f"SELECT COUNT(*) FROM public.hashes WHERE status = '{initialisation}';")
-    init_count = cursor.fetchone()[0]
-
-    if init_count == 0:
-        # Sélectionner le plus petit id_hash avec le statut 'In Queue'
-        cursor.execute(f"SELECT id_hash FROM public.hashes WHERE status='{inqueue}' ORDER BY id_hash ASC LIMIT 1;")
-        result = cursor.fetchone()
-        
-        if result:
+    # Sélectionner le plus petit id_hash avec le statut 'In Queue'
+    cursor.execute(f"SELECT id_hash FROM public.hashes WHERE status='{inqueue}' ORDER BY id_hash ASC LIMIT 1;")
+    result = cursor.fetchone()
+    
+    if result:
+        # Vérifier s'il y a des statuts 'Initialisation'
+        cursor.execute(f"SELECT COUNT(*) FROM public.hashes WHERE status = '{initialisation}';")
+        init_count = cursor.fetchone()[0]
+        if init_count == 0:
             id_hash = result[0]
-            # Terraform en cours ? j'attends
+            # Terraform en cours ? terraform_new_instance : j'attends
             print(f"{vert("[ANALYSE BDD]")} id_hash {id_hash} détecté.")
             print(f"{vert("[ACTION]")} Création d'instance pour id_hash : {id_hash}.")
             subprocess.run(f"./terraform_new_instance.sh {id_hash}", shell=True, check=True)
         else:
-            print(f"{rouge("[ANALYSE BDD]")} Aucun id_hash en attente.")
+            print(f"{jaune("[ANALYSE BDD]")} Impossible de lancer de nouvelle instance, {init_count} Initialisation d'instance est déjà en cours.")
+            print(f"{jaune("[ANALYSE BDD]")} Veuillez patienter...")
+            #print(f"[*] id hash {id_hash} en attente")
     else:
-        print(f"{jaune("[ANALYSE BDD]")} Impossible de lancer de nouvelle instance, {init_count} Initialisation d'instance est déjà en cours.")
-        print(f"{jaune("[ANALYSE BDD]")} Veuillez patienter...")
-        #print(f"[*] id hash {id_hash} en attente")
-
+            print(f"{rouge("[ANALYSE BDD]")} Aucun id_hash en attente.")
+    
     cursor.close()
     conn.close()
 
@@ -83,25 +82,26 @@ def resume_newinstance():
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    # Vérifier s'il y a des statuts 'Initialisation'
-    cursor.execute(f"SELECT COUNT(*) FROM public.hashes WHERE status = '{initialisation}';")
-    init_count = cursor.fetchone()[0]
-
-    if init_count == 0:
-        # Sélectionner le plus petit id_hash avec le statut 'In Queue'
-        cursor.execute(f"SELECT id_hash FROM public.hashes WHERE status='{want_resume}' ORDER BY id_hash ASC LIMIT 1;")
-        result = cursor.fetchone()
-        
-        if result:
+    # Sélectionner le plus petit id_hash avec le statut 'In Queue'
+    cursor.execute(f"SELECT id_hash FROM public.hashes WHERE status='{want_resume}' ORDER BY id_hash ASC LIMIT 1;")
+    result = cursor.fetchone()
+    
+    if result:
+        # Vérifier s'il y a des statuts 'Initialisation'
+        cursor.execute(f"SELECT COUNT(*) FROM public.hashes WHERE status = '{initialisation}';")
+        init_count = cursor.fetchone()[0]
+        if init_count == 0:
             id_hash = result[0]
             # Terraform en cours ? j'attends
             print(f"{vert("[ANALYSE BDD]")} id_hash {id_hash} détecté.")
             print(f"{vert("[ACTION]")} Création d'instance 'Resume' pour id_hash : {id_hash}.")
             subprocess.run(f"./terraform_resume_instance.sh {id_hash}", shell=True, check=True)
+        else:
+            print(f"{jaune("[ANALYSE BDD]")} Impossible de lancer de nouvelle instance, {init_count} Initialisation d'instance est déjà en cours.")
+            print(f"{jaune("[ANALYSE BDD]")} Veuillez patienter...")
+            #print(f"[*] id hash {id_hash} en attente")
     else:
-        print(f"{jaune("[ANALYSE BDD]")} Impossible de lancer de nouvelle instance, {init_count} Initialisation d'instance est déjà en cours.")
-        print(f"{jaune("[ANALYSE BDD]")} Veuillez patienter...")
-        #print(f"[*] id hash {id_hash} en attente")
+            print(f"{rouge("[ANALYSE BDD]")} Aucun id_hash en attente.")
 
     cursor.close()
     conn.close()
@@ -116,7 +116,6 @@ def instance_terminate():
         WHERE public.instances.status != '{terminate}'
         AND (public.hashes.result IS NOT NULL
         OR public.hashes.status = '{error}'
-        OR public.hashes.status = '{expired}'
         OR public.hashes.status = '{stopped}'
         );
     """)    
@@ -175,22 +174,25 @@ def hash_cracked():
     cursor.close()
     conn.close()
 
-def hash_expired():
+def hash_limit_price():
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute(f"""
         SELECT id_hash FROM public.hashes
         LEFT JOIN public.instances ON public.instances.id_instance = public.hashes.fk_id_instance
-        WHERE public.hashes.price_limit >= public.instances.price_total 
-        AND public.hashes.status != '{expired}' ;
+        WHERE public.hashes.price_limit <= public.instances.price_total 
+        AND public.hashes.status != '{want_stop}' 
+        AND public.hashes.status != '{exporting}' 
+        AND public.hashes.status != '{stopped}' 
+    ;
     """)    
 
     results = cursor.fetchall()
     if results:
         for result in results:
             id_hash = result[0]
-            subprocess.run(f"./hash_status.sh {id_hash} '{expired}'", shell=True, check=True)
-            print(f"{vert("[STATUS]")} Instance {id_hash} : Hash {expired}.")
+            subprocess.run(f"./hash_status.sh {id_hash} '{want_stop}'", shell=True, check=True)
+            print(f"{vert("[STATUS]")} Instance {id_hash} : Hash {want_stop}.")
     cursor.close()
     conn.close()
 
@@ -257,7 +259,7 @@ async def main():
             asyncio.create_task(run_in_executor(instance_terminate))
             asyncio.create_task(run_in_executor(hash_notfound))
             asyncio.create_task(run_in_executor(hash_cracked))
-            asyncio.create_task(run_in_executor(hash_expired))
+            asyncio.create_task(run_in_executor(hash_limit_price))
             asyncio.create_task(run_in_executor(hash_processing))
             asyncio.create_task(run_in_executor(instance_want_stop))
 

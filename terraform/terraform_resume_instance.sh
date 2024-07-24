@@ -14,6 +14,7 @@ echo id_hash = $id_hash
 status_initialisation="Initialisation"
 status_processing="Processing"
 
+id_instance=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -t -c "SELECT fk_id_instance FROM public.hashes WHERE id_hash = '$id_hash';" | xargs)
 
 # hashes.status = Initialisation
 PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -c "UPDATE public.hashes SET status='$status_initialisation' WHERE id_hash='$id_hash';"
@@ -47,7 +48,6 @@ if [ "$power" == "Low" ]; then
 
 elif [ "$power" == "Medium" ]; then
     type_instance=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -t -c "SELECT type_provider FROM public.conf_instance WHERE power = '$power';" | xargs)
-    type_instance=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -t -c "SELECT type_provider FROM public.conf_instance WHERE power = '$power';" | xargs)
     new_count=$((current_count_medium + 1))
     terraform apply -refresh=false -auto-approve -var="total_instance_count_low=$current_count_low" -var="total_instance_count_medium=$new_count" -var="total_instance_count_high=$current_count_high"
     # Récupérer les détails des instances créées
@@ -62,7 +62,6 @@ elif [ "$power" == "Medium" ]; then
     id_arch=$(echo "$latest_instance" | jq -r '.instance_id')
 
 elif [ "$power" == "High" ]; then
-    type_instance=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -t -c "SELECT type_provider FROM public.conf_instance WHERE power = '$power';" | xargs)
     type_instance=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -t -c "SELECT type_provider FROM public.conf_instance WHERE power = '$power';" | xargs)
     new_count=$((current_count_high + 1))
     terraform apply -refresh=false -auto-approve -var="total_instance_count_low=$current_count_low" -var="total_instance_count_medium=$current_count_medium" -var="total_instance_count_high=$new_count"

@@ -10,22 +10,24 @@ if [ $# -ne 1 ]; then
     exit 1
 fi
 
-id_arch=$1
-id_instance=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -t -c "SELECT id_instance FROM public.instances WHERE id_arch='$id_arch';" | xargs)
-
-# Définir la date de début
+id_arch="$1"
 DATE_START=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -t -c "SELECT date_start FROM public.instances WHERE id_arch='$id_arch';" | xargs)
-
-# Récupération du prix de l'instance par heure
-power=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -t -c "SELECT power FROM public.instances WHERE id_instance = '$id_instance';" | xargs)
-provider=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -t -c "SELECT provider FROM public.hashes WHERE fk_id_instance = '$id_instance';" | xargs)
-
-price_instance_hash2ash=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -t -c "SELECT price_hash2ash FROM public.conf_instance WHERE power = '$power' AND provider = '$provider';" | xargs)
-
-
 
 while true
 do 
+    echo "================= GET INFORMATION =================="
+    id_instance=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -t -c "SELECT id_instance FROM public.instances WHERE id_arch='$id_arch';" | xargs)
+    echo "id_instance=$id_instance"
+    # Récupération du prix de l'instance par heure
+    power=$(PGPASSWORD="C5yAn39f8Tm7U13z" psql -U "userHash2ash" -h "db-hash2ash-prod.c3m2i44y2jm0.us-east-1.rds.amazonaws.com" -p "5432" -d "hash2ash" -t -c "SELECT power FROM public.hashes WHERE fk_id_instance = '$id_instance';" | xargs)
+    echo "power=$power"
+    provider=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -t -c "SELECT provider FROM public.hashes WHERE fk_id_instance = '$id_instance';" | xargs)
+    echo provider=$provider
+    price_instance_hash2ash=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -t -c "SELECT price_hash2ash FROM public.conf_instance WHERE power = '$power' AND provider = '$provider';" | xargs)
+    echo "price_instance_hash2ash=$price_instance_hash2ash €/h"
+    echo "===================================="
+
+
     DATE_END=$(TZ='Europe/Paris' date +'%Y-%m-%d %H:%M:%S')  # Utiliser la date actuelle comme date de fin
 
     echo "========================== CALCUL DU PRIX EN LIVE =========================="
@@ -39,7 +41,7 @@ do
     SECONDS2=$(date -d "$DATE_END" +%s.%N)
 
     # Calculer la différence
-    DIFF=$(awk -v d1="$SECONDS1" -v d2="$SECONDS2" 'BEGIN {print d2 - d1}')
+    DIFF=$(awk -v d1="$SECONDS1" -v d2="$SECONDS2" 'BEGIN {print int(d2 - d1)}')
 
     # Convertir la différence en un format lisible (heures, minutes, secondes)
     HOURS=$(echo "$DIFF / 3600" | bc)
@@ -70,5 +72,5 @@ do
     # Mettre à jour la base de données avec le coût total en entier
     PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -c "UPDATE public.instances SET price_total='$TOTAL_COST' WHERE id_arch='$id_arch';"
 
-    sleep 60
+    sleep 10
 done
