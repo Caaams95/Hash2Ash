@@ -23,6 +23,7 @@ final_wordlist_file="/tmp/wordlist.txt"
 path_parsed_output_hashcat="/tmp/parsed_output_hashcat.txt"
 log_hashcat="/tmp/log_hashcat.txt"
 
+mkdir -p /home/ubuntu/.local/share/hashcat/sessions
 touch $hashcat_history_cracked
 
 echo "[VARIABLE INFO - $id_arch] id_arch = $id_arch"
@@ -31,9 +32,9 @@ echo "[VARIABLE INFO - $id_arch] id_hash = $id_hash"
 id_instance=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -t -c "SELECT id_instance FROM public.instances WHERE id_arch='$id_arch';" | xargs)
 echo "[HASHCAT INFO - $id_arch] id_instance = $id_instance"
 # Mise à jour de la BDD : fk_id_instance = id_instance
-PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -c "UPDATE public.hashes SET fk_id_instance=$id_instance WHERE id_hash='$id_hash';"
+PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -c "UPDATE public.hashes SET fk_id_instance='$id_instance' WHERE id_hash='$id_hash';"
 ## Récuperer l'url_hash
-url_hash=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -t -c "SELECT hash FROM public.hashes WHERE id_hash = $id_hash;" | xargs)
+url_hash=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -t -c "SELECT hash FROM public.hashes WHERE id_hash = '$id_hash';" | xargs)
 echo "[HASHCAT INFO - $id_arch] url_hash = $url_hash"
 ## Récuperation de la wordlist en BDD
 wordlists=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -t -c "SELECT wordlist FROM public.hashes WHERE fk_id_instance = '$id_instance';" | xargs)

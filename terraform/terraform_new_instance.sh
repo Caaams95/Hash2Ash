@@ -31,7 +31,7 @@ current_count_medium=$(terraform state list | grep 'aws_instance.instance_medium
 current_count_high=$(terraform state list | grep 'aws_instance.instance_high' | wc -l)
 
 if [ "$power" == "Low" ]; then
-    type_instance="t2.large"
+    type_instance=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -t -c "SELECT type_provider FROM public.conf_instance WHERE power = '$power';" | xargs)
     new_count=$((current_count_low + 1))
     terraform apply -refresh=false -auto-approve -var="total_instance_count_low=$new_count" -var="total_instance_count_medium=$current_count_medium" -var="total_instance_count_high=$current_count_high"
     # Récupérer les détails des instances créées
@@ -46,7 +46,7 @@ if [ "$power" == "Low" ]; then
     id_arch=$(echo "$latest_instance" | jq -r '.instance_id')
 
 elif [ "$power" == "Medium" ]; then
-    type_instance="c7a.4xlarge"
+    type_instance=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -t -c "SELECT type_provider FROM public.conf_instance WHERE power = '$power';" | xargs)
     new_count=$((current_count_medium + 1))
     terraform apply -refresh=false -auto-approve -var="total_instance_count_low=$current_count_low" -var="total_instance_count_medium=$new_count" -var="total_instance_count_high=$current_count_high"
     # Récupérer les détails des instances créées
@@ -61,7 +61,7 @@ elif [ "$power" == "Medium" ]; then
     id_arch=$(echo "$latest_instance" | jq -r '.instance_id')
 
 elif [ "$power" == "High" ]; then
-    type_instance="c7a.12xlarge"
+    type_instance=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -t -c "SELECT type_provider FROM public.conf_instance WHERE power = '$power';" | xargs)
     new_count=$((current_count_high + 1))
     terraform apply -refresh=false -auto-approve -var="total_instance_count_low=$current_count_low" -var="total_instance_count_medium=$current_count_medium" -var="total_instance_count_high=$new_count"
     # Récupérer les détails des instances créées
@@ -94,8 +94,10 @@ is_processed=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p
 
 if [ "$is_processed" -le 0 ]; then
     # Ajouter l'instance dans la base de données
-    PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -c "INSERT INTO public.instances (type_instance, id_arch, price_provider, price_hash2ash, status, ip) VALUES ('$type_instance', '$id_arch', 2, 4, '$status_processing', '$instance_ip');"
+    echo "[INSERT BDD] INSERT INTO public.instances (type_instance, id_arch, status, ip) VALUES ('$type_instance', '$id_arch', '$status_processing', '$instance_ip');"
+    PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -c "INSERT INTO public.instances (type_instance, id_arch, status, ip) VALUES ('$type_instance', '$id_arch', '$status_processing', '$instance_ip');"
 
+    echo "[UPDATE BDD] UPDATE public.hashes SET status = '$status_processing' WHERE id_hash = $id_hash;" 
     # hashes.status = Processing
     PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -c "UPDATE public.hashes SET status = '$status_processing' WHERE id_hash = $id_hash;"
 
