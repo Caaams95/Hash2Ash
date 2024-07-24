@@ -5,7 +5,7 @@ import psycopg2
 import time
 from dotenv import load_dotenv
 import os
-
+from functions import *
 
 def rouge(text):
     return f"\033[31m{text}\033[0m"
@@ -160,6 +160,8 @@ def instance_want_stop():
         LEFT JOIN public.instances ON public.instances.id_instance = public.hashes.fk_id_instance
         WHERE public.instances.status != '{terminate}'
         AND public.hashes.status = '{want_stop}'
+        AND public.hashes.status != '{exporting}'
+        AND public.hashes.status != '{stopped}'
         ;
     """)    
     results = cursor.fetchall()
