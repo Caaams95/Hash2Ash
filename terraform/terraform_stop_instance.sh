@@ -41,7 +41,7 @@ status_shutdown="Terminate"
 PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -c "UPDATE public.instances SET date_shutdown=(now() at time zone 'Europe/Paris') WHERE id_arch='$instance_id';"
 
 # use_terraform='0'
-PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -c "UPDATE public.hashes SET use_terraform='0' WHERE id_hash='$id_hash';
+PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -c "UPDATE public.hashes SET use_terraform='0' WHERE id_hash='$id_hash';"
 
 # Afficher le succès de la suppression de l'instance
 echo "[INSTANCE ACTION] Arret de l'instance $instance_id terminé"

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Définir la locale pour s'assurer que les nombres avec des points décimaux sont correctement interprétés
-# permet d'eviter les bug de : 99,99€ ici la "," pose probleme car en temps normal il faut un "." donc on passe en en_US.UTF-8
+# permet d'eviter les bug de : 99,99$ ici la "," pose probleme car en temps normal il faut un "." donc on passe en en_US.UTF-8
 export LC_NUMERIC="en_US.UTF-8"
 
 source /tmp/.env_script
@@ -24,7 +24,7 @@ do
     provider=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -t -c "SELECT provider FROM public.hashes WHERE fk_id_instance = '$id_instance';" | xargs)
     echo provider=$provider
     price_instance_hash2ash=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -t -c "SELECT price_hash2ash FROM public.conf_instance WHERE power = '$power' AND provider = '$provider';" | xargs)
-    echo "price_instance_hash2ash=$price_instance_hash2ash €/h"
+    echo "price_instance_hash2ash=$price_instance_hash2ash $/h"
     echo "===================================="
 
 
@@ -64,13 +64,13 @@ do
 
     # Afficher le coût total
     echo " "
-    echo "Cout par heure : $price_instance_hash2ash €"
+    echo "Cout par heure : $price_instance_hash2ash $"
     echo "Temps d'activité : $HOURS h - $MINUTES min - $SECONDS s"
 
-#    echo "Cout heures = $HOURS_COST €"
-#    echo "Cout minutes = $MINUTES_COST €"
-#    echo "Cout secondes = $SECONDS_COST €"
-    echo "Le coût total pour la période entre $DATE_START et $DATE_END est de $TOTAL_COST €"
+#    echo "Cout heures = $HOURS_COST $"
+#    echo "Cout minutes = $MINUTES_COST $"
+#    echo "Cout secondes = $SECONDS_COST $"
+    echo "Le coût total pour la période entre $DATE_START et $DATE_END est de $TOTAL_COST $"
 
     # Mettre à jour la base de données avec le coût total en entier
     PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -c "UPDATE public.instances SET price_total='$TOTAL_COST' WHERE id_arch='$id_arch';"
