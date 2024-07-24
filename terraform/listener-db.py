@@ -115,9 +115,13 @@ def instance_terminate():
         SELECT id_arch FROM public.instances
         LEFT JOIN public.hashes ON public.hashes.fk_id_instance = public.instances.id_instance
         WHERE public.instances.status != '{terminate}'
-        AND (public.hashes.result IS NOT NULL
-        OR public.hashes.status = '{error}'
-        OR public.hashes.status = '{stopped}'
+        AND (
+            (public.hashes.result IS NOT NULL
+            OR public.hashes.status = '{error}'
+            OR public.hashes.status = '{stopped}')
+            OR 
+            (public.hashes.result IS NULL
+            AND public.hashes.status = '{notfound}')
         );
     """)    
     results = cursor.fetchall()
@@ -154,7 +158,7 @@ def instance_want_stop():
     cursor.execute(f"""
         SELECT id_hash FROM public.hashes
         LEFT JOIN public.instances ON public.instances.id_instance = public.hashes.fk_id_instance
-        SWHERE public.instances.status != '{terminate}'
+        WHERE public.instances.status != '{terminate}'
         AND public.hashes.status = '{want_stop}'
         ;
     """)    
@@ -271,7 +275,7 @@ async def main():
             asyncio.create_task(run_in_executor(launch_newinstance))
             asyncio.create_task(run_in_executor(resume_newinstance))
             asyncio.create_task(run_in_executor(instance_terminate))
-            asyncio.create_task(run_in_executor(hash_notfound))
+            # asyncio.create_task(run_in_executor(hash_notfound))
             asyncio.create_task(run_in_executor(hash_cracked))
             asyncio.create_task(run_in_executor(hash_limit_price))
             asyncio.create_task(run_in_executor(hash_processing))
