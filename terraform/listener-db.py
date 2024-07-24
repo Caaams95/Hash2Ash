@@ -24,7 +24,7 @@ load_dotenv()
 print("start listener.py")
 
 # Info pour l'auth de la bdd
-
+20
 db_config = {
     'user': os.getenv('DB_USERNAME'),
     'password': os.getenv('DB_PASSWORD'),
@@ -261,6 +261,8 @@ async def run_in_executor(func):
 
 # Fonction principale asynchrone
 async def main():
+    asyncio.create_task(crontab_24())
+
     try:
         conn = get_db_connection()
         cursor = conn.cursor()

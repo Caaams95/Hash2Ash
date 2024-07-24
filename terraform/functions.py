@@ -6,6 +6,9 @@ import os
 import schedule
 import time
 import stripe
+import asyncio
+import math
+from psycopg2.extras import RealDictCursor
 
 load_dotenv()
 stripe.api_key =  os.getenv('STRIPE_API_KEY')
@@ -156,7 +159,7 @@ def get_ec2_instance_prices(region='us-east-1'):
     return instance_prices
 
 
-def update_provider_price():
+async def update_provider_price():
     prices = get_ec2_instance_prices()
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -172,11 +175,49 @@ def update_provider_price():
     cursor.close()
     conn.close()
 
-def crontab_24():
-    schedule.every(24).hours.do(update_provider_price())
+async def update_hash2ash_price():
+    # Connexion à la base de données en utilisant asyncio.to_thread pour éviter le blocage
+    conn = await asyncio.to_thread(get_db_connection)
+    cursor = await asyncio.to_thread(conn.cursor, cursor_factory=RealDictCursor)
+
+    try:
+        # Récupérer les colonnes price_provider et profit_percentage de la table conf_instance
+        await asyncio.to_thread(cursor.execute, "SELECT id_conf, price_provider, profit_percentage FROM public.conf_instance")
+        rows = await asyncio.to_thread(cursor.fetchall)
+
+        # Calculer price_hash2ash et mettre à jour la base de données
+        for row in rows:
+            price_provider = row['price_provider']
+            profit_percentage = row['profit_percentage']
+            price_hash2ash = price_provider * (1 + profit_percentage / 100)
+            
+            # Arrondir au supérieur à 2 chiffres après la virgule
+            price_hash2ash = math.ceil(price_hash2ash * 100) / 100
+
+            await asyncio.to_thread(cursor.execute, 
+                "UPDATE public.conf_instance SET price_hash2ash = %s WHERE id_conf = %s", 
+                (price_hash2ash, row['id_conf'])
+            )
+
+        # Commit les changements
+        await asyncio.to_thread(conn.commit)
+    finally:
+        # Fermer le curseur et la connexion
+        await asyncio.to_thread(cursor.close)
+        await asyncio.to_thread(conn.close)
+
+
+async def crontab_24():
+    loop = asyncio.get_event_loop()
+
+    # Lancer la mise à jour initiale
+    await update_provider_price()
+    await update_hash2ash_price()
+
+    # Planifier les mises à jour toutes les 24 heures
+    schedule.every(24).hours.do(lambda: loop.create_task(update_provider_price()))
+    schedule.every(24).hours.do(lambda: loop.create_task(update_hash2ash_price()))
 
     while True:
         schedule.run_pending()
-        time.sleep(1)
-
-
+        await asyncio.sleep(1)
