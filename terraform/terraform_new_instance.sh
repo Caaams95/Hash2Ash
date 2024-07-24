@@ -90,14 +90,15 @@ echo =======================================
 
 
 id_stripe=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -t -c "SELECT id_stripe FROM public.hashes WHERE id_hash = '$id_hash';" | xargs)
+id_user=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -t -c "SELECT fk_id_user FROM public.hashes WHERE id_hash = '$id_hash';" | xargs)
 
 # Insérer l'ID de la nouvelle instance dans la base de données (exemple avec PostgreSQL)
 is_processed=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -t -c "SELECT COUNT(*) FROM public.instances WHERE id_arch = '$id_arch';" | tr -d '[:space:]')
 
 if [ "$is_processed" -le 0 ]; then
     # Ajouter l'instance dans la base de données
-    echo "[INSERT BDD] INSERT INTO public.instances (type_instance, id_arch, status, ip, id_stripe) VALUES ('$type_instance', '$id_arch', '$status_processing', '$instance_ip', '$id_stripe');"
-    PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -c "INSERT INTO public.instances (type_instance, id_arch, status, ip, id_stripe) VALUES ('$type_instance', '$id_arch', '$status_processing', '$instance_ip', '$id_stripe');"
+    echo "[INSERT BDD] INSERT INTO public.instances (type_instance, id_arch, status, ip, id_user, id_stripe) VALUES ('$type_instance', '$id_arch', '$status_processing', '$instance_ip', '$id_user','$id_stripe');"
+    PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -c "INSERT INTO public.instances (type_instance, id_arch, status, ip, id_user, id_stripe) VALUES ('$type_instance', '$id_arch', '$status_processing', '$instance_ip', '$id_user', '$id_stripe');"
 
     echo "[UPDATE BDD] UPDATE public.hashes SET status = '$status_processing' WHERE id_hash = $id_hash;" 
     # hashes.status = Processing
