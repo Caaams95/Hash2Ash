@@ -107,11 +107,63 @@
                             <h1 class="modal-title fs-5" id="resumeModal-{{hash.id_hash}}Label">Are you sure you want to resume the cracking process ?</h1>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
+                        <div class="modal-body">
+                            <form method="post">
+                                {{form.hidden_tag()}}
+
+                                <div class="mb-3">
+                                    {{ form.hash_id.label(class="form-control-label") }}
+                                    {{ form.hash_id(class="form-control-plaintext", value=hash.id_hash, readonly="readonly" ) }}
+                                </div>
+                                <div class="mb-3">
+                                    {{ form.provider.label(class="form-control-label") }}
+                        
+                                    {% if form.provider.errors %}
+                                        {{ form.provider(class="form-control is-invalid") }}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.provider.errors %}
+                                                <span>{{error}}</span>
+                                            {% endfor %}
+                                        </div>
+                                    {% else %}
+                                        {{ form.provider(class="form-control") }}
+                                    {% endif %}
+                                </div>
+                                <div class="mb-3">
+                                    {{ form.power.label(class="form-control-label") }}
+                        
+                                    {% if form.power.errors %}
+                                        {{ form.power(class="form-control is-invalid") }}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.power.errors %}
+                                                <span>{{error}}</span>
+                                            {% endfor %}
+                                        </div>
+                                    {% else %}
+                                        {{ form.power(class="form-control") }}
+                                    {% endif %}
+                                </div>
+                                <div class="mb-3">
+                                    {{ form.price_limit.label(class="form-control-label") }}
+                        
+                                    {% if form.price_limit.errors %}
+                                        {{ form.price_limit(class="form-control is-invalid") }}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.price_limit.errors %}
+                                                <span>{{error}}</span>
+                                            {% endfor %}
+                                        </div>
+                                    {% else %}
+                                        {{ form.price_limit(class="form-control") }}
+                                    {% endif %}
+                                </div>
+                            
+
+                        </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                             <form action="{{ url_for('resume_hash', id_hash=hash.id_hash) }}" method="post"> <!-- A modifier avec la route -->
-                                <input class="btn btn-danger" type="submit" value="Resume">
-                            </form>
+                            {{ form.submit(class="btn btn-primary") }}
+                            </form> 
                         </div>
                     </div>
                 </div>

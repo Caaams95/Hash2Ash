@@ -1,7 +1,7 @@
 from flask import session, render_template, url_for, flash, redirect, request, abort
 from src import app, db, bcrypt, mail, s3
 from src.models import Users, Instances, Hashes, Conf_instance
-from src.forms import RegistrationForm, LoginForm, CrackStationForm, UpdateAccountForm, AdminUpdateAccountForm, RequestResetForm, ResetPasswordForm   # Importation des classes RegistrationForm et LoginForm depuis forms.py
+from src.forms import RegistrationForm, LoginForm, ResumeHashForm, CrackStationForm, UpdateAccountForm, AdminUpdateAccountForm, RequestResetForm, ResetPasswordForm   # Importation des classes RegistrationForm et LoginForm depuis forms.py
 from flask_login import login_user, current_user, logout_user, login_required
 from flask_mail import Message
 import smtplib
@@ -119,7 +119,8 @@ def crackstation():
                 'power': form.power.data,
                 'provider': form.provider.data,
                 'price_limit': form.price_limit.data,
-                'product_id': product.id
+                'product_id': product.id,
+                'resume': False
             }
             return redirect(url_for('create_checkout_session'))  # Redirect to Stripe
             
@@ -132,15 +133,45 @@ def crackstation():
 
 # Route pour la page profil avec les hashes de l'utilisateur
 @app.route('/account')
-@app.route('/account/myhashes')
+@app.route('/account/myhashes', methods=['GET', 'POST'])
 @login_required
 def account():
     page = request.args.get('page', 1, type=int)
     instances = Instances.query.all()
     hash_count = Hashes.query.filter_by(fk_id_user=current_user.id_user, display_user=True).count()
     hashes = Hashes.query.filter_by(fk_id_user=current_user.id_user, display_user=True).order_by(Hashes.id_hash.desc()).paginate(page=page, per_page=10)
+    form = ResumeHashForm()
+    if form.validate_on_submit():
+        hash = Hashes.query.get_or_404(form.hash_id.data)
+        if current_user.id_user != hash.fk_id_user:
+            abort(403)
 
-    return render_template('accountMyhashes.html', title='My Hashes', hashes=hashes, instances=instances, hash_count=hash_count)
+        stripe.api_key = app.config['STRIPE_API_KEY']
+        power = Conf_instance.query.filter_by(power=form.power.data).first()
+        # Créer un produit
+        product = stripe.Product.create(
+            name="Daily Subscription",
+        )
+
+        # Créer un prix récurrent pour le produit
+        price = stripe.Price.create(
+            unit_amount=int(power.price_hash2ash * 100 * 24),  # Montant en cents
+            currency="usd",
+            recurring={"interval": "day"},
+            product=product.id,
+        )
+        session['form_data'] = {
+                'hash_user_id': hash.fk_id_user,
+                'hash_id': form.hash_id.data,
+                'power': form.power.data,
+                'provider': form.provider.data,
+                'price_limit': form.price_limit.data,
+                'product_id': product.id,
+                'resume': True,
+                'dashboard': 'user'
+            }
+        return redirect(url_for('create_checkout_session'))  # Redirect to Stripe
+    return render_template('accountMyhashes.html', title='My Hashes', hashes=hashes, instances=instances, hash_count=hash_count, form=form)
 
 # Route pour la mise à jour des infos du compte utilisateur
 @app.route('/account/info', methods=['GET', 'POST'])
@@ -366,30 +397,63 @@ def create_checkout_session():
 def payment_success():
     if current_user.is_authenticated:
         form_data = session.get('form_data', {})
-        # Mettre à jour le statut de l'abonnement en "Paid" ou similaire
-        form_data.get('product_id')
-        hash = Hashes(hash=form_data.get('hash'), 
-                      name=form_data.get('name'), 
-                      algorithm=form_data.get('algorithm'), 
-                      wordlist=form_data.get('wordlist'), 
-                      custom_wordlist=form_data.get('custom_wordlist'), 
-                      power=form_data.get('power'), 
-                      provider=form_data.get('provider'), 
-                      status='In Queue', 
-                      price=0, 
-                      fk_id_user=current_user.id_user, 
-                      price_limit=form_data.get('price_limit'),
-                      id_stripe=form_data.get('product_id'))
-        db.session.add(hash)
-        db.session.commit()
-        session.pop('form_data', None)
-        flash(f'Payment successful! Your hash crack has been added to the queue', 'success')
+        if form_data.get('resume'):
+            hash = Hashes.query.get_or_404(form_data.get('hash_id'))
+            if current_user.id_user != hash.fk_id_user:
+                abort(403)
+            if hash.status == 'Stopped':
+                hash.status = 'Want Resume'
+                hash.id_stripe = form_data.get('product_id')
+                hash.provider=form_data.get('provider')
+                hash.power=form_data.get('power')
+                hash.price_limit=form_data.get('price_limit')
+                db.session.commit()
+                flash(f'Payment successful! The hash has been resumed', 'success')
 
-        return redirect(url_for('account'))
+               
+                
+            if form_data.get('dashboard') == 'user':
+                session.pop('form_data', None)
+                return redirect(url_for('account'))
+            else:
+                session.pop('form_data', None)
+                return redirect(url_for('adminpanelUserHashes', id_user=hash.fk_id_user))
+        else:
+            
+            # Mettre à jour le statut de l'abonnement en "Paid" ou similaire
+            form_data.get('product_id')
+            hash = Hashes(hash=form_data.get('hash'), 
+                        name=form_data.get('name'), 
+                        algorithm=form_data.get('algorithm'), 
+                        wordlist=form_data.get('wordlist'), 
+                        custom_wordlist=form_data.get('custom_wordlist'), 
+                        power=form_data.get('power'), 
+                        provider=form_data.get('provider'), 
+                        status='In Queue', 
+                        price=0, 
+                        fk_id_user=current_user.id_user, 
+                        price_limit=form_data.get('price_limit'),
+                        id_stripe=form_data.get('product_id'))
+            db.session.add(hash)
+            db.session.commit()
+            session.pop('form_data', None)
+            flash(f'Payment successful! Your hash crack has been added to the queue', 'success')
+
+            return redirect(url_for('account'))
     else:
         return redirect(url_for('login'))
     
 @app.route('/payment-cancel', methods=['GET'])
 def payment_cancel():
     flash('Payment was canceled.', 'warning')
-    return redirect(url_for('crackstation'))
+    form_data = session.get('form_data', {})
+    if form_data.get('dashboard') == 'user':
+        session.pop('form_data', None)
+        return redirect(url_for('account'))
+    elif form_data.get('dashboard') == 'admin':
+        hash_user_id = form_data.get('hash_user_id')
+        session.pop('form_data', None)
+        return redirect(url_for('adminpanelUserHashes', id_user=hash_user_id))
+    else:  
+        session.pop('form_data', None)
+        return redirect(url_for('crackstation'))
