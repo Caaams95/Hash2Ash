@@ -100,6 +100,7 @@ def crackstation():
                 recurring={"interval": "day"},
                 product=product.id,
             )
+
             url_hash = save_and_upload_file(form.hash.data, current_user.id_user, 'hash')
 
             form.wordlist.data = None if not form.wordlist.data else form.wordlist.data
@@ -117,7 +118,8 @@ def crackstation():
                 'custom_wordlist': url_custom_wordlist,
                 'power': form.power.data,
                 'provider': form.provider.data,
-                'price_limit': form.price_limit.data
+                'price_limit': form.price_limit.data,
+                'product_id': product.id
             }
             return redirect(url_for('create_checkout_session'))  # Redirect to Stripe
             
@@ -365,9 +367,19 @@ def payment_success():
     if current_user.is_authenticated:
         form_data = session.get('form_data', {})
         # Mettre à jour le statut de l'abonnement en "Paid" ou similaire
-        
-        print(form_data.get('price_limit'))
-        hash = Hashes(hash=form_data.get('hash'), name=form_data.get('name') ,algorithm=form_data.get('algorithm'), wordlist=form_data.get('wordlist'), custom_wordlist=form_data.get('custom_wordlist') ,power=form_data.get('power'), provider=form_data.get('provider'), status='In Queue', price=0, fk_id_user=current_user.id_user, price_limit=form_data.get('price_limit'))
+        form_data.get('product_id')
+        hash = Hashes(hash=form_data.get('hash'), 
+                      name=form_data.get('name'), 
+                      algorithm=form_data.get('algorithm'), 
+                      wordlist=form_data.get('wordlist'), 
+                      custom_wordlist=form_data.get('custom_wordlist'), 
+                      power=form_data.get('power'), 
+                      provider=form_data.get('provider'), 
+                      status='In Queue', 
+                      price=0, 
+                      fk_id_user=current_user.id_user, 
+                      price_limit=form_data.get('price_limit'),
+                      id_stripe=form_data.get('product_id'))
         db.session.add(hash)
         db.session.commit()
         session.pop('form_data', None)
