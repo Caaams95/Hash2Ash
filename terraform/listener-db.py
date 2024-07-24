@@ -154,7 +154,7 @@ def instance_want_stop():
     cursor.execute(f"""
         SELECT id_hash FROM public.hashes
         LEFT JOIN public.instances ON public.instances.id_instance = public.hashes.fk_id_instance
-        SWHERE public.instances.status != '{terminate}'
+        WHERE public.instances.status != '{terminate}'
         AND public.hashes.status = '{want_stop}'
         ;
     """)    
