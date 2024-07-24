@@ -54,10 +54,13 @@ do
     SECONDS_COST=$(echo "$SECONDS / 3600 * $price_instance_hash2ash" | bc -l)  # Correction: / 3600 pour les secondes
 
     TOTAL_COST=$(echo "$HOURS_COST + $MINUTES_COST + $SECONDS_COST" | bc -l)
-
+    echo "prix total brut = $TOTAL_COST"
     # Arrondir au supérieur et formater à deux chiffres après la virgule
     TOTAL_COST=$(echo "$TOTAL_COST + 0.005" | bc -l)
+    echo "prix total arrondi brut = $TOTAL_COST"
+
     TOTAL_COST=$(printf "%.2f" "$TOTAL_COST")
+    echo "prix total 2 chiffre après la virgule = $TOTAL_COST"
 
     # Afficher le coût total
     echo " "
