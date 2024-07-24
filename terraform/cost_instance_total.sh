@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Définir la locale pour s'assurer que les nombres avec des points décimaux sont correctement interprétés
-# permet d'eviter les bug de : 99,99€ ici la "," pose probleme car en temps normal il faut un "." donc on passe en en_US.UTF-8
+# permet d'eviter les bug de : 99,99$ ici la "," pose probleme car en temps normal il faut un "." donc on passe en en_US.UTF-8
 export LC_NUMERIC="en_US.UTF-8"
 
 source ../.env
@@ -64,16 +64,87 @@ echo "prix total 2 chiffre après la virgule = $TOTAL_COST"
 
 # Afficher le coût total
 echo " "
-echo "Cout par heure : $price_instance_hash2ash €"
+echo "Cout par heure : $price_instance_hash2ash $"
 echo "Temps d'activité : $HOURS h - $MINUTES min - $SECONDS s"
 
-echo "Cout heures = $HOURS_COST €"
-echo "Cout minutes = $MINUTES_COST €"
-echo "Cout secondes = $SECONDS_COST €"
-echo "Le coût total pour la période entre $DATE_START et $DATE_END est de $TOTAL_COST €"
+echo "Cout heures = $HOURS_COST $"
+echo "Cout minutes = $MINUTES_COST $"
+echo "Cout secondes = $SECONDS_COST $"
+echo "Le coût total pour la période entre $DATE_START et $DATE_END est de $TOTAL_COST $"
 
 # Mettre à jour la base de données avec le coût total en entier
 PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -c "UPDATE public.instances SET price_total='$TOTAL_COST' WHERE id_arch='$id_arch';"
 echo "========================== FIN CALCUL DU PRIX =========================="
 
 
+24h = 240
+48h = 480
+36h = 360 
+
+
+
+8h utiliser
+12 heures a remboursé
+12
+
+
+
+res = €consomé mod €24h
+a rembourser = €24€ - res
+
+prix
+10€/h
+
+prix 24h = 240€
+
+
+payé :
+72h = 720€
+
+consomé :
+69h = 690€
+
+a remboursé:
+3h 30€
+
+
+
+
+consomé :
+69h = 690€
+prix 24h = 240€
+
+690 mod 240 = 210
+240 - 210 = 30
+
+
+
+
+24h = 240
+4h = 40
+
+
+
+
+
+res = €consomé mod €24h
+a rembourser = €24€ - res
+
+prerequis:
+power = select dans l'instance where id.....
+
+calcul temp:
+€consomé = instances.price_total
+€24h = 24 * (conf_instance.price_has2ash Where power=$power)
+res =$€consomé % $€24h
+
+calcul final :
+refund = res - $€24h
+
+
+def get_refund(id_instance)
+    return price_refund
+
+def stripe_refund(id, amount)
+
+stripe_refund(SELECT id bdd, get_refund(id_instance:150))

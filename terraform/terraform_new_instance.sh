@@ -18,6 +18,9 @@ status_processing="Processing"
 # hashes.status = Initialisation
 PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -c "UPDATE public.hashes SET status='$status_initialisation' WHERE id_hash='$id_hash';"
 
+# use_terraform='1'
+PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -c "UPDATE public.hashes SET use_terraform='1' WHERE id_hash='$id_hash';"
+
 # Select power instance needed
 power=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -t -c "SELECT power FROM public.hashes WHERE id_hash = '$id_hash';" | xargs)
 echo power : $power
@@ -48,6 +51,7 @@ if [ "$power" == "Low" ]; then
 elif [ "$power" == "Medium" ]; then
     type_instance=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -t -c "SELECT type_provider FROM public.conf_instance WHERE power = '$power';" | xargs)
     new_count=$((current_count_medium + 1))
+    # Créer la nouvelle instance
     terraform apply -refresh=false -auto-approve -var="total_instance_count_low=$current_count_low" -var="total_instance_count_medium=$new_count" -var="total_instance_count_high=$current_count_high"
     # Récupérer les détails des instances créées
     instances_details=$(terraform output -json instances_details_medium)
@@ -79,6 +83,13 @@ else
     echo "Power level not recognized"
     exit 1
 fi
+
+
+
+
+# use_terraform='0'
+PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -c "UPDATE public.hashes SET use_terraform='0' WHERE id_hash='$id_hash';"
+
 
 
 echo =======================================
