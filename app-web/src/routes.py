@@ -214,7 +214,7 @@ def adminpanel():
     return render_template('adminpanel.html', title='Admin Panel', form=form, users=users, user_count=user_count)
 
 # Route pour afficher les hashes d'un utilisateur en etant admin
-@app.route('/adminpanel/user_<int:id_user>/hashes')
+@app.route('/adminpanel/user_<int:id_user>/hashes', methods=['GET', 'POST'])
 @login_required
 def adminpanelUserHashes(id_user):
     if current_user.role != 'admin':
@@ -223,11 +223,43 @@ def adminpanelUserHashes(id_user):
     user = Users.query.get_or_404(id_user)
     page = request.args.get('page', 1, type=int)
     username = user.username
-    #hashes = Hashes.query.filter_by(fk_id_user=user.id_user).all()
     hash_count = Hashes.query.filter_by(fk_id_user=user.id_user).count()
     hashes = Hashes.query.filter_by(fk_id_user=user.id_user).order_by(Hashes.id_hash.desc()).paginate(page=page, per_page=10)
     instances = Instances.query.all()
-    return render_template('adminpanelUserHashes.html', title='User Hashes', hashes=hashes, username=username, instances=instances, hash_count=hash_count, id_user=id_user)
+    form = ResumeHashForm()
+    if form.validate_on_submit():
+        hash = Hashes.query.get_or_404(form.hash_id.data)
+        if current_user.role != 'admin':
+            abort(403)
+
+        stripe.api_key = app.config['STRIPE_API_KEY']
+        power = Conf_instance.query.filter_by(power=form.power.data).first()
+        # Créer un produit
+        product = stripe.Product.create(
+            name="Daily Subscription",
+        )
+
+        # Créer un prix récurrent pour le produit
+        price = stripe.Price.create(
+            unit_amount=int(power.price_hash2ash * 100 * 24),  # Montant en cents
+            currency="usd",
+            recurring={"interval": "day"},
+            product=product.id,
+        )
+        
+        session['form_data'] = {
+                'hash_user_id': hash.fk_id_user,
+                'hash_id': form.hash_id.data,
+                'power': form.power.data,
+                'provider': form.provider.data,
+                'price_limit': form.price_limit.data,
+                'product_id': product.id,
+                'resume': True,
+                'dashboard': 'admin'
+            }
+        
+        return redirect(url_for('create_checkout_session'))  # Redirect to Stripe
+    return render_template('adminpanelUserHashes.html', title='User Hashes', hashes=hashes, username=username, instances=instances, hash_count=hash_count, id_user=id_user, form=form)
 
 # Route pour la suppression d'un hash
 @app.route('/adminpanel/hash_<int:id_hash>/delete', methods=['POST'])
