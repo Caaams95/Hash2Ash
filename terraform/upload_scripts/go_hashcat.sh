@@ -106,7 +106,7 @@ hashcat $path_hash $final_wordlist_file $algorithm --session="session_hash2ash" 
 hashcat $path_hash $final_wordlist_file $algorithm --session="session_hash2ash" --show > $path_result
 
 
-
+status_check=$(PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -t -c "SELECT status FROM public.hashes WHERE id_hash = '$id_hash';" | xargs)
 # Envoyer le result en BDD
 
 line_count=$(wc -l < $hashcat_history_cracked)
@@ -118,6 +118,9 @@ if [ $HASHCAT_EXIT_CODE -eq 255 ]; then
     # probleme au lancement de hashcat
     echo "[HASHCAT ERREUR - $id_arch] Erreur lors du lancement de hashcat avec le code de retour $HASHCAT_EXIT_CODE"
     PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -c "UPDATE $TABLE_HASHES SET status='Error' WHERE id_hash = $id_hash;"
+elif [ $status_check -eq "Want Stop" ] || [ $status_check -eq "Exporting" ] || [ $status_check -eq "Stopped" ]; then
+    # Stop flag
+    echo "[HASHCAT STATUS - $id_arch] Hashcat Want Stop"
 elif { [ "$HASHCAT_EXIT_CODE" -eq 0 ] || [ "$HASHCAT_EXIT_CODE" -eq 1 ]; } && [ $line_count -eq 0 ] ; then
     # password pas trouvé
     echo "[HASHCAT RESULT - $id_arch] Password Exhausted"
@@ -137,5 +140,5 @@ elif { [ "$HASHCAT_EXIT_CODE" -eq 0 ] || [ "$HASHCAT_EXIT_CODE" -eq 1 ]; } && [ 
 
     PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -c "UPDATE $TABLE_HASHES SET result='$url_hash_cracked' WHERE id_hash=$id_hash;"
 else
-    echo "[HASHCAT STATUS - $id_arch] Hashcat interrompu"
+    echo "[HASHCAT STATUS - $id_arch] Hashcat interrompu de manière anormale"
 fi
