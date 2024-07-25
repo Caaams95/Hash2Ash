@@ -142,8 +142,6 @@ def instance_terminate():
     conn.close()
 
 
-
-
 def instance_want_stop():
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -208,34 +206,6 @@ def hash_limit_price():
     cursor.close()
     conn.close()
 
-def hash_notfound():
-    # Hashcat update hashes.status en Not Found automatiquement
-
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute(f"""
-        SELECT id_arch FROM public.instances
-        LEFT JOIN public.hashes ON public.hashes.fk_id_instance=public.instances.id_instance
-        WHERE public.hashes.result IS NULL
-        AND public.hashes.status = '{notfound}'
-        AND public.instances.status != '{terminate}';
-    """)
-    
-    results = cursor.fetchall()
-    if results:
-        for result in results:
-            id_arch = result[0]
-            print(f"{vert("[STATUS]")} Instance {id_arch} : Hash non trouvé.")
-            print(f"{vert("[LISTENER ACTION]")} ./instance-status.sh {id_arch} '{terminate}")
-            subprocess.run(f"./instance-status.sh {id_arch} '{terminate}'", shell=True, check=True)
-            print(f"{vert("[LISTENER ACTION]")} ./terraform_stop_instance.sh {id_arch}")
-            subprocess.run(f"./terraform_stop_instance.sh {id_arch}", shell=True, check=True)
-            print(f"{vert("[BDD UPDATE]")} ./cost_instance.sh {id_arch}")
-            subprocess.run(f"./cost_instance.sh {id_arch}", shell=True, check=True)
-            print(f"{vert("[STATUS]")} Instance {id_arch} : {terminate}.")
-    cursor.close()
-    conn.close()
-
 def hash_processing():
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -271,7 +241,6 @@ async def main():
             asyncio.create_task(run_in_executor(launch_newinstance))
             asyncio.create_task(run_in_executor(resume_newinstance))
             asyncio.create_task(run_in_executor(instance_terminate))
-            # asyncio.create_task(run_in_executor(hash_notfound))
             asyncio.create_task(run_in_executor(hash_cracked))
             asyncio.create_task(run_in_executor(hash_limit_price))
             asyncio.create_task(run_in_executor(hash_processing))

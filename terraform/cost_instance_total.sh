@@ -74,4 +74,5 @@ echo "Le coût total pour la période entre $DATE_START et $DATE_END est de $TOT
 
 # Mettre à jour la base de données avec le coût total en entier
 PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -c "UPDATE public.instances SET price_total='$TOTAL_COST' WHERE id_arch='$id_arch';"
+PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USERNAME" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -c "UPDATE public.hashes SET price='$TOTAL_COST' WHERE fk_id_instance='$id_instance';"
 echo "========================== FIN CALCUL DU PRIX =========================="
