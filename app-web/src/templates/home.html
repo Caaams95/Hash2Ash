@@ -1,6 +1,48 @@
 {% extends "layout.html" %}
+
 {% block content %} 
-    <h1>Welcome to the {{title}} page</h1>
+    <h1>Welcome to Hash2Ash</h1>
+    <p>Bienvenue sur Hash2Ash, votre solution pour le brute-force de hashes via des instances cloud.</p>
+    
+    <h3>Fonctionnement du site</h3>
+    <p>
+      <ul>
+        Avec Hash2Ash, vous pouvez brute-force des hashes en utilisant <strong>hashcat</strong> sur des instances cloud puissantes. 
+        Profitez de la puissance de calcul de ces instances pour vos besoins de brute-force.
+      </ul>
+    </p>
+    
+    <h3>Paiement</h3>
+    <p>
+      <ul>
+        Nous proposons un système d'abonnement à la journée. Vous payez un prix correspondant à une instance déployée pendant 24 heures et on vous rembourse la différence une fois votre brute-force fini ou stoppé!
+      </ul>
+    </p>
+
+    <h3>Prix des instances à l'heure</h3>
+    <p>
+      <ul>
+      <li>Low : 0.11$<br></li>
+      <li>Medium : 0.99$<br></li>
+      <li>High : 2.96$<br></li>
+      </ul>
+    </p>
+
+    <h3>Comment ça marche?</h3>
+    <p>
+      Pour commencer, vous devez vous inscrire sur notre site. Une fois inscrit, vous pouvez vous connecter et accéder à la page <strong>CrackStation</strong>. </p>
+      <ul>
+      <p>Sur cette page, vous pouvez choisir:</p>
+        <li>Le nom de votre Hash</li>
+        <li>Upload d'un fichier .txt contenant un ou plusieurs Hash</li>
+        <li>Upload de wordlist personalisée</li>
+        <li>Sélection de une ou plusieurs wordlists prédéfinies</li>
+        <li>Le type d'instance à utiliser</li>
+        <li>Fixer le prix maximum de l'instance déployé</li>
+      </ul>
+    </p>
+    
+    <!-- Section pour l'affichage des hashes (désactivée) -->
     <!-- {% for hash in hashes %}
         <article class="media content-section">
           <div class="media-body">
